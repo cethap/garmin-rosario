@@ -160,15 +160,34 @@ function glanceTitleStaysVisibleInTheLowerSlot(logger as Logger) as Boolean {
     return ok;
 }
 
+// The view centers the Avemaría ring and its number on the subscreen the device reports
+// (MainLayout.ring). On the Instinct 2 that is the subscreen window the layout checks use, so the
+// checks below, fed the same ring, measure what the view draws.
+(:test)
+function ringSitsOnTheDeviceSubscreen(logger as Logger) as Boolean {
+    var subscreen = (WatchUi has :getSubscreen) ? WatchUi.getSubscreen() : null;
+    var ring = MainLayout.ring();
+    if (subscreen == null) {
+        logger.debug("no subscreen reported; ring=" + ring);
+        return false;
+    }
+    logger.debug("subscreen=" + subscreen.x + "," + subscreen.y + " " + subscreen.width + "x" + subscreen.height + " ring=" + ring);
+    return subscreen.x + subscreen.width / 2 == ScreenArea.SUBSCREEN_X
+        && subscreen.y + subscreen.height / 2 == ScreenArea.SUBSCREEN_Y
+        && subscreen.width == subscreen.height && subscreen.width / 2 == ScreenArea.SUBSCREEN_RADIUS
+        && ring[0] == ScreenArea.SUBSCREEN_X && ring[1] == ScreenArea.SUBSCREEN_Y && ring[2] < ScreenArea.SUBSCREEN_RADIUS;
+}
+
 // Every text the main screen draws, for each of the 72 steps of each mystery set and the finished
-// rosary (DONE), stays inside the
-// visible area (which ends at the subscreen lens ring); the Avemaría number (the only FONT_NUMBER_MILD text)
-// sits centered inside the subscreen window instead. The blocks keep their top-to-bottom order
-// without overlapping, and wrapping never cuts a title or a mystery short.
+// rosary (DONE), stays inside the visible area (which ends at the subscreen lens ring); the
+// Avemaría number (the only FONT_NUMBER_MILD text), drawn on the ring the view uses, stays inside
+// the subscreen window instead. The blocks keep their top-to-bottom order without overlapping, and
+// wrapping never cuts a title or a mystery short.
 (:test)
 function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
     var clockFont = WatchUi.loadResource(Rez.Fonts.PixelSmall) as FontResource;
+    var ring = MainLayout.ring();
     var seen = {} as Dictionary<String, Boolean>;
     var ok = true;
     for (var set = 0; set < 4; set++) {
@@ -186,7 +205,7 @@ function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
                 ok = LayoutCheck.wrapsWhole(mystery, mysteries[decade] as Array<String>, 2, logger) && ok;
             }
             var items = MainLayout.plan(step, "00:00", clockFont, titles[decade] as Array<String>,
-                mysteries[decade] as Array<String>, ScreenArea.SUBSCREEN_X, ScreenArea.SUBSCREEN_Y);
+                mysteries[decade] as Array<String>, ring[0], ring[1]);
             ok = LayoutCheck.blocksInOrder(dc, items, logger) && ok;
             for (var i = 0; i < items.size(); i++) {
                 ok = LayoutCheck.mainItemFits(dc, items[i], seen, logger) && ok;
@@ -205,6 +224,7 @@ function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
 function mainScreenClockStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
     var clockFont = WatchUi.loadResource(Rez.Fonts.PixelSmall) as FontResource;
+    var ring = MainLayout.ring();
     var seen = {} as Dictionary<String, Boolean>;
     var minutes = [0, 11, 22, 33, 44, 55, 6, 17, 28, 39];
     var ok = true;
@@ -213,7 +233,7 @@ function mainScreenClockStaysInsideTheVisibleArea(logger as Logger) as Boolean {
             for (var mode = 0; mode < 2; mode++) {
                 var text = Rosary.formatClock(hour, minutes[m], mode == 0);
                 var items = MainLayout.plan(0, text, clockFont, ["Inicio"] as Array<String>, ["Misterios Gozosos"] as Array<String>,
-                    ScreenArea.SUBSCREEN_X, ScreenArea.SUBSCREEN_Y);
+                    ring[0], ring[1]);
                 ok = LayoutCheck.mainItemFits(dc, items[0], seen, logger) && ok;
             }
         }
@@ -234,10 +254,7 @@ module LayoutCheck {
         var inSubscreen = item.font == Graphics.FONT_NUMBER_MILD;
         var fits;
         if (inSubscreen) {
-            var centerX = (box[0] + box[2]) / 2;
-            var centerY = (box[1] + box[3]) / 2;
-            fits = ScreenArea.insideSubscreen(box)
-                && centerX == ScreenArea.SUBSCREEN_X.toFloat() && centerY == ScreenArea.SUBSCREEN_Y.toFloat();
+            fits = ScreenArea.insideSubscreen(box);
         } else {
             fits = ScreenArea.visible(box);
         }

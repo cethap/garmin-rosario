@@ -34,6 +34,25 @@ module MainLayout {
     const BOX_SIZE = 9;
     const BOX_GAP = 5;
     const BOX_COUNT = 7;
+    // Avemaría ring on the Instinct 2's subscreen (x=113 y=0 62x62), until the device reports its own:
+    // centered on the window, 5px in so the 3px stroke keeps clear of the bezel.
+    const RING_X = 144;
+    const RING_Y = 31;
+    const RING_INSET = 5;
+    const RING_RADIUS = 31 - RING_INSET;
+
+    // Center and radius [x, y, radius] of the Avemaría ring and its number: on the subscreen the device
+    // reports, or the Instinct 2's when it reports none. The view and the layout tests both use it.
+    function ring() as Array<Number> {
+        if (WatchUi has :getSubscreen) {
+            var subscreen = WatchUi.getSubscreen();
+            if (subscreen != null) {
+                return [subscreen.x + subscreen.width / 2, subscreen.y + subscreen.height / 2,
+                    subscreen.width / 2 - RING_INSET] as Array<Number>;
+            }
+        }
+        return [RING_X, RING_Y, RING_RADIUS] as Array<Number>;
+    }
 
     // Word-wraps the decade title and the mystery with a system font (they have accents).
     function wrapTitle(text as String) as Array<String> {
@@ -104,24 +123,20 @@ class RosaryView extends WatchUi.View {
         View.initialize();
         self.step = step;
         _set = set;
-        // Instinct 2 subscreen (x=113 y=0 62x62) until onLayout reads the real one.
-        _ringX = 144;
-        _ringY = 31;
-        _ringRadius = 26;
+        // Instinct 2 subscreen until onLayout reads the device's.
+        _ringX = MainLayout.RING_X;
+        _ringY = MainLayout.RING_Y;
+        _ringRadius = MainLayout.RING_RADIUS;
         _titleLines = [] as Array<String>;
         _mysteryLines = [] as Array<String>;
     }
 
     function onLayout(dc as Dc) as Void {
         _clockFont = WatchUi.loadResource(Rez.Fonts.PixelSmall) as FontResource;
-        if (WatchUi has :getSubscreen) {
-            var subscreen = WatchUi.getSubscreen();
-            if (subscreen != null) {
-                _ringX = subscreen.x + subscreen.width / 2;
-                _ringY = subscreen.y + subscreen.height / 2;
-                _ringRadius = subscreen.width / 2 - 5; // keeps the 3px stroke clear of the bezel
-            }
-        }
+        var ring = MainLayout.ring();
+        _ringX = ring[0];
+        _ringY = ring[1];
+        _ringRadius = ring[2];
         wrapText();
     }
 
