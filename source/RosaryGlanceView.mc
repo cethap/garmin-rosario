@@ -2,8 +2,8 @@ import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// Glance loop entry (164x62 on the Instinct 2): the day's mysteries on the first line and today's
-// progress on the second, read from the progress the widget saves. Layout.glancePlan places them.
+// Glance loop entry (164x62 on the Instinct 2): the day's mysteries at the top and today's progress
+// at the bottom, read from the progress the widget saves. Layout.glancePlan places them.
 (:glance)
 class RosaryGlanceView extends WatchUi.GlanceView {
 

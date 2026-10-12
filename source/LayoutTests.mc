@@ -3,31 +3,34 @@ import Toybox.Lang;
 import Toybox.Test;
 import Toybox.WatchUi;
 
-// Visible area of the Instinct 2, and checks that drawn text stays inside it. Measured from the
-// display opening in the SDK's simulator image of the watch (Devices/instinct2/instinct2.png,
-// screen at 99,164):
-//   - the 176x176 screen, clipped by a disk of radius 98 around its center (88,88);
-//   - minus the subscreen lens: its window is a disk of radius 31 around (144,31), and the opaque
-//     ring around the window reaches radius 44, so text outside the subscreen keeps clear of the ring.
-// The glance keeps to the inscribed circle (radius 88) instead: where the lower slots of the glance
-// loop place it is not known, and the deeper indent keeps it off the round edge there too.
+// Checks that drawn text stays inside the visible area of the Instinct 2: the per-row table the
+// watch face uses (VisibleArea.mc), with a 2px margin. The Avemaría number is the one text drawn in
+// the subscreen window instead, a disk of radius 31 around (144,31) inside the lens ring.
 // Text boxes span the full font height (ascent + descent), as accented capitals reach the ascent.
 (:test)
 module ScreenArea {
 
     const SIZE = Layout.SCREEN_SIZE;
-    const CENTER = Layout.SCREEN_SIZE / 2;
-    const DISPLAY_RADIUS = 98;
-    const GLANCE_RADIUS = 88;
     const SUBSCREEN_X = 144;
     const SUBSCREEN_Y = 31;
     const SUBSCREEN_RADIUS = 31;
-    const RING_RADIUS = 44;
     const MARGIN = 2;
-    // Screen position and width of the glance content area in the selected slot.
+    // Screen position and width of the glance content area in the selected slot (simulator.json).
     const GLANCE_X = 9;
     const GLANCE_Y = 19;
     const GLANCE_WIDTH = 164;
+    // Screen position of the glance content area in the slot under the selected one. The system
+    // places it; this is an estimate from the user's two simulator screenshots: the first glance
+    // (title top at dc 7, x 0) lost about 3px of its first letter to the round edge, and the second
+    // (title baseline at dc 40) touched the bottom bezel. Only dc rows 0..~40 are on screen there,
+    // so only the first line can show.
+    const GLANCE_LOWER_X = 9;
+    const GLANCE_LOWER_Y = 135;
+    // Margin the first line keeps in that slot. The shared indent that fits "Luminosos" in the
+    // selected slot (dc x 9) puts every set name's box at screen x 18, which is the visible edge on
+    // row 158, the bottom of the box: margin 0. The box is conservative there: no set name has a
+    // descender, so the glyphs end at the baseline (row 152, visible from x 12).
+    const GLANCE_LOWER_MARGIN = 0;
 
     function measuringDc() as Dc {
         return new Graphics.BufferedBitmap({:width => SIZE, :height => SIZE}).getDc();
@@ -54,18 +57,9 @@ module ScreenArea {
         return dx * dx + dy * dy <= radius * radius;
     }
 
-    // True when the box point closest to (cx, cy) is farther than radius.
-    function boxClearOfDisk(box as Array<Float>, cx as Numeric, cy as Numeric, radius as Numeric) as Boolean {
-        var dx = clamp(cx, box[0], box[2]) - cx;
-        var dy = clamp(cy, box[1], box[3]) - cy;
-        return dx * dx + dy * dy > radius * radius;
-    }
-
-    // Screen box inside the display (the given radius) with the margin, and clear of the subscreen ring.
-    function visibleOnScreen(box as Array<Float>, displayRadius as Number) as Boolean {
-        return boxInRect(box, MARGIN, MARGIN, SIZE - MARGIN, SIZE - MARGIN)
-            && boxInDisk(box, CENTER, CENTER, displayRadius - MARGIN)
-            && boxClearOfDisk(box, SUBSCREEN_X, SUBSCREEN_Y, RING_RADIUS + MARGIN);
+    // Screen box inside the visible main display with the margin.
+    function visible(box as Array<Float>) as Boolean {
+        return VisibleArea.boxFits(box, MARGIN);
     }
 
     // Screen box inside the subscreen window with the margin.
@@ -78,20 +72,15 @@ module ScreenArea {
             + box[2].format("%.1f") + "," + box[3].format("%.1f") + "]";
     }
 
+    // The text, its screen box and the margin it keeps inside the visible area (-1: cut).
+    function describeVisible(text as String, box as Array<Float>) as String {
+        return describe(text, box) + " margin " + VisibleArea.marginOf(box, 9);
+    }
+
     function farther(a as Float, b as Float) as Float {
         a = a < 0 ? -a : a;
         b = b < 0 ? -b : b;
         return a > b ? a : b;
-    }
-
-    function clamp(value as Numeric, low as Float, high as Float) as Float {
-        if (value < low) {
-            return low;
-        }
-        if (value > high) {
-            return high;
-        }
-        return value.toFloat();
     }
 }
 
@@ -100,21 +89,30 @@ function geometryChecksCornersAndClosestPoints(logger as Logger) as Boolean {
     // A 10x10 box whose far corner (110,110) is 14.1 from (100,100).
     var box = [100.0, 100.0, 110.0, 110.0] as Array<Float>;
     var inDisk = ScreenArea.boxInDisk(box, 100, 100, 15) && !ScreenArea.boxInDisk(box, 100, 100, 14);
-    // The closest point to (95,105) is (100,105), 5 away; to (90,90) the corner (100,100), 14.1 away.
-    var clear = ScreenArea.boxClearOfDisk(box, 95, 105, 4) && !ScreenArea.boxClearOfDisk(box, 95, 105, 5)
-        && ScreenArea.boxClearOfDisk(box, 90, 90, 14) && !ScreenArea.boxClearOfDisk(box, 90, 90, 15)
-        && !ScreenArea.boxClearOfDisk(box, 105, 105, 30);
+    // Rows 73..135 span the full width (0..175): a box fits with the margin on both sides only.
+    var fullWidth = VisibleArea.boxFits([2.0, 80.0, 173.0, 100.0] as Array<Float>, 2)
+        && !VisibleArea.boxFits([1.0, 80.0, 173.0, 100.0] as Array<Float>, 2)
+        && !VisibleArea.boxFits([2.0, 80.0, 174.0, 100.0] as Array<Float>, 2);
+    // The margin covers rows too: rows 73..135 span the full width, but row 72 ends at 136 (the lens
+    // ring), so a box from row 74 keeps only 1px and one from row 75 keeps 2px.
+    var rowMargin = VisibleArea.marginOf([50.0, 75.0, 135.0, 90.0] as Array<Float>, 9) == 2
+        && VisibleArea.marginOf([50.0, 74.0, 135.0, 90.0] as Array<Float>, 9) == 1;
+    // Off the bottom of the screen is never visible; the top rows narrow toward the corner.
+    var edges = VisibleArea.marginOf([50.0, 170.0, 60.0, 180.0] as Array<Float>, 9) == -1
+        && VisibleArea.boxFits([38.0, 2.0, 100.0, 10.0] as Array<Float>, 2)
+        && !VisibleArea.boxFits([37.0, 2.0, 100.0, 10.0] as Array<Float>, 2);
     var center = Layout.textBox(new Layout.TextItem("x", Graphics.FONT_TINY, 50, 40,
         Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER), 30, 23);
     var right = Layout.textBox(new Layout.TextItem("x", Graphics.FONT_TINY, 50, 40, Graphics.TEXT_JUSTIFY_RIGHT), 30, 23);
-    logger.debug("inDisk=" + inDisk + " clear=" + clear + " center=" + center + " right=" + right);
-    return inDisk && clear
+    logger.debug("inDisk=" + inDisk + " fullWidth=" + fullWidth + " rowMargin=" + rowMargin + " edges=" + edges
+        + " center=" + center + " right=" + right);
+    return inDisk && fullWidth && rowMargin && edges
         && center[0] == 35.0 && center[1] == 28.5 && center[2] == 65.0 && center[3] == 51.5
         && right[0] == 20.0 && right[1] == 40.0 && right[2] == 50.0 && right[3] == 63.0;
 }
 
 // Every label the glance shows, for each mystery set, stays inside the selected glance slot and the
-// visible area: off the round edge and clear of the subscreen.
+// visible area with the 2px margin: off the round edge and clear of the subscreen lens.
 (:test)
 function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
@@ -133,8 +131,8 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
                 var box = ScreenArea.measure(dc, item);
                 var screen = ScreenArea.offset(box, ScreenArea.GLANCE_X, ScreenArea.GLANCE_Y);
                 var fits = ScreenArea.boxInRect(box, 0, 0, ScreenArea.GLANCE_WIDTH, Layout.GLANCE_HEIGHT)
-                    && ScreenArea.visibleOnScreen(screen, ScreenArea.GLANCE_RADIUS);
-                logger.debug((fits ? "fits " : "OUT ") + ScreenArea.describe(item.text, screen));
+                    && ScreenArea.visible(screen);
+                logger.debug((fits ? "fits " : "OUT ") + ScreenArea.describeVisible(item.text, screen));
                 ok = ok && fits;
             }
         }
@@ -142,9 +140,29 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     return ok;
 }
 
+// In the slot under the selected one (position estimated from the user's screenshots, see
+// ScreenArea.GLANCE_LOWER_Y) only the first line of the glance is on screen: the set name must
+// show whole there, for every set.
+(:test)
+function glanceTitleStaysVisibleInTheLowerSlot(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var ok = true;
+    for (var set = 0; set < 4; set++) {
+        var item = Layout.glancePlan(set as Rosary.MysterySet, Rosary.NOT_STARTED, Layout.GLANCE_HEIGHT)[0];
+        var box = ScreenArea.measure(dc, item);
+        var screen = ScreenArea.offset(box, ScreenArea.GLANCE_LOWER_X, ScreenArea.GLANCE_LOWER_Y);
+        var fits = item.text.equals(Rosary.glanceTitle(set as Rosary.MysterySet))
+            && ScreenArea.boxInRect(box, 0, 0, ScreenArea.GLANCE_WIDTH, Layout.GLANCE_HEIGHT)
+            && VisibleArea.boxFits(screen, ScreenArea.GLANCE_LOWER_MARGIN);
+        logger.debug((fits ? "fits " : "OUT ") + ScreenArea.describeVisible(item.text, screen));
+        ok = ok && fits;
+    }
+    return ok;
+}
+
 // Every text the main screen draws, for each of the 72 steps of each mystery set and the finished
 // rosary (DONE), stays inside the
-// visible area and clear of the subscreen ring; the Avemaría number (the only FONT_NUMBER_MILD text)
+// visible area (which ends at the subscreen lens ring); the Avemaría number (the only FONT_NUMBER_MILD text)
 // sits centered inside the subscreen window instead. The blocks keep their top-to-bottom order
 // without overlapping, and wrapping never cuts a title or a mystery short.
 (:test)
@@ -176,9 +194,9 @@ function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
         }
     }
     var boxes = MainLayout.boxesBounds();
-    var boxesFit = ScreenArea.visibleOnScreen([boxes[0].toFloat(), boxes[1].toFloat(), boxes[2].toFloat(), boxes[3].toFloat()] as Array<Float>,
-        ScreenArea.DISPLAY_RADIUS);
-    logger.debug((boxesFit ? "fits " : "OUT ") + "progress boxes " + boxes);
+    var boxesBox = [boxes[0].toFloat(), boxes[1].toFloat(), boxes[2].toFloat(), boxes[3].toFloat()] as Array<Float>;
+    var boxesFit = ScreenArea.visible(boxesBox);
+    logger.debug((boxesFit ? "fits " : "OUT ") + ScreenArea.describeVisible("progress boxes", boxesBox));
     return ok && boxesFit;
 }
 
@@ -206,8 +224,12 @@ function mainScreenClockStaysInsideTheVisibleArea(logger as Logger) as Boolean {
 (:test)
 module LayoutCheck {
 
-    // Checks one main-screen item, logging each distinct text and position once.
+    // Checks one main-screen item, each distinct text and position once (logged, then remembered).
     function mainItemFits(dc as Dc, item as Layout.TextItem, seen as Dictionary<String, Boolean>, logger as Logger) as Boolean {
+        var key = item.text + "@" + item.x + "," + item.y;
+        if (seen.hasKey(key)) {
+            return seen[key] as Boolean;
+        }
         var box = ScreenArea.measure(dc, item);
         var inSubscreen = item.font == Graphics.FONT_NUMBER_MILD;
         var fits;
@@ -217,13 +239,11 @@ module LayoutCheck {
             fits = ScreenArea.insideSubscreen(box)
                 && centerX == ScreenArea.SUBSCREEN_X.toFloat() && centerY == ScreenArea.SUBSCREEN_Y.toFloat();
         } else {
-            fits = ScreenArea.visibleOnScreen(box, ScreenArea.DISPLAY_RADIUS);
+            fits = ScreenArea.visible(box);
         }
-        var key = item.text + "@" + item.x + "," + item.y;
-        if (!seen.hasKey(key)) {
-            seen[key] = true;
-            logger.debug((fits ? "fits " : "OUT ") + (inSubscreen ? "subscreen " : "") + ScreenArea.describe(item.text, box));
-        }
+        seen[key] = fits;
+        logger.debug((fits ? "fits " : "OUT ")
+            + (inSubscreen ? "subscreen " + ScreenArea.describe(item.text, box) : ScreenArea.describeVisible(item.text, box)));
         return fits;
     }
 

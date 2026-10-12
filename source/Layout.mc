@@ -10,11 +10,12 @@ module Layout {
     const SCREEN_SIZE = 176;
     // Height of the glance content area in the selected slot of the glance loop (164x62 at 9,19).
     const GLANCE_HEIGHT = 62;
-    // Glance text: two tiny lines at the bottom of the slot, sharing a left indent. The subscreen
-    // lens takes the top right of the slot, so the first line sits low enough to clear it; the indent
-    // keeps both lines off the round edge on the left (see LayoutTests.mc for the measured limits).
-    const GLANCE_LEFT = 7;
-    const GLANCE_PITCH = 17;
+    // Glance text: two tiny lines sharing a left indent, the set name at the top of the slot and the
+    // progress at the bottom. In a slot under the selected one only the top of the slot is on screen,
+    // so the set name still shows there. The indent is the one that fits the selected slot: the
+    // subscreen lens ring bounds the set name on the right and the round edge both lines on the left
+    // (see LayoutTests.mc for the measured limits).
+    const GLANCE_LEFT = 9;
 
     // One piece of text a view draws, with the arguments Dc.drawText takes.
     class TextItem {
@@ -37,14 +38,13 @@ module Layout {
         }
     }
 
-    // Glance: the day's mysteries over today's progress, bottom-aligned in a slot of the given height.
+    // Glance: the day's mysteries at the top of a slot of the given height, today's progress at its bottom.
     function glancePlan(set as Rosary.MysterySet, step as Number, height as Number) as Array<TextItem> {
         var font = Graphics.FONT_TINY;
-        var bottomLine = height - Graphics.getFontHeight(font);
         var justify = Graphics.TEXT_JUSTIFY_LEFT as Number;
         return [
-            new TextItem(Rosary.glanceTitle(set), font, GLANCE_LEFT, bottomLine - GLANCE_PITCH, justify),
-            new TextItem(Rosary.glanceSummary(step), font, GLANCE_LEFT, bottomLine, justify)
+            new TextItem(Rosary.glanceTitle(set), font, GLANCE_LEFT, 0, justify),
+            new TextItem(Rosary.glanceSummary(step), font, GLANCE_LEFT, height - Graphics.getFontHeight(font), justify)
         ] as Array<TextItem>;
     }
 
