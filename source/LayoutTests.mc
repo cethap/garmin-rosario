@@ -121,8 +121,7 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var seen = {} as Dictionary<String, Boolean>;
     var ok = true;
     for (var set = 0; set < 4; set++) {
-        // -1 is a day not started yet and STEP_COUNT a finished rosary.
-        for (var position = -1; position <= Rosary.STEP_COUNT; position++) {
+        for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
             var items = Layout.glancePlan(set as Rosary.MysterySet, position, Layout.GLANCE_HEIGHT);
             for (var i = 0; i < items.size(); i++) {
                 var item = items[i];
@@ -143,7 +142,8 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     return ok;
 }
 
-// Every text the main screen draws, for each of the 72 steps of each mystery set, stays inside the
+// Every text the main screen draws, for each of the 72 steps of each mystery set and the finished
+// rosary (DONE), stays inside the
 // visible area and clear of the subscreen ring; the Avemaría number (the only FONT_NUMBER_MILD text)
 // sits centered inside the subscreen window instead. The blocks keep their top-to-bottom order
 // without overlapping, and wrapping never cuts a title or a mystery short.
@@ -156,7 +156,7 @@ function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     for (var set = 0; set < 4; set++) {
         var titles = {} as Dictionary<Number, Array<String>>;
         var mysteries = {} as Dictionary<Number, Array<String>>;
-        for (var step = 0; step < Rosary.STEP_COUNT; step++) {
+        for (var step = 0; step <= Rosary.DONE; step++) {
             var decade = Rosary.decadeAt(step);
             if (!titles.hasKey(decade)) {
                 // Wrapping is slow, and both texts depend only on the decade.

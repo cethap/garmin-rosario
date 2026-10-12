@@ -8,10 +8,6 @@ import Toybox.WatchUi;
 (:glance)
 class RosarioApp extends Application.AppBase {
 
-    // Application.Storage keys: the current step and the YYYYMMDD date it belongs to.
-    const STEP_KEY = "step";
-    const DATE_KEY = "date";
-
     function initialize() {
         AppBase.initialize();
     }
@@ -23,11 +19,16 @@ class RosarioApp extends Application.AppBase {
     }
 
     // Full-screen widget, opened from the glance with START. The session keeps the date it was
-    // opened on, so a rosary prayed across midnight is saved under the day of its mysteries.
+    // opened on, so a rosary prayed across midnight is saved under the day of its mysteries. Opening
+    // saves nothing: a day only counts as started once a bead moves.
     function getInitialView() as [Views] or [Views, InputDelegates] {
         var today = todayInfo();
         var dateKey = dateKeyOf(today);
-        var view = new RosaryView(loadStep(dateKey), Rosary.mysterySetForWeekday(today.day_of_week as Number));
+        var position = loadProgress(dateKey);
+        if (position == Rosary.NOT_STARTED) {
+            position = 0;
+        }
+        var view = new RosaryView(position, Rosary.mysterySetForWeekday(today.day_of_week as Number));
         return [view, new RosaryDelegate(view, dateKey)];
     }
 
@@ -44,14 +45,14 @@ class RosarioApp extends Application.AppBase {
         return Rosary.dateKey(info.year as Number, info.month as Number, info.day as Number);
     }
 
-    // Step saved for the given day, or 0 when the saved progress belongs to another day.
-    function loadStep(dateKey as Number) as Number {
-        return Rosary.restoreStep(Storage.getValue(STEP_KEY), Storage.getValue(DATE_KEY), dateKey);
+    // Position saved for the given day (0..Rosary.DONE), or Rosary.NOT_STARTED.
+    function loadProgress(dateKey as Number) as Number {
+        return Rosary.decodeProgress(Storage.getValue(Rosary.PROGRESS_KEY), dateKey);
     }
 
-    function saveStep(step as Number, dateKey as Number) as Void {
-        Storage.setValue(STEP_KEY, step);
-        Storage.setValue(DATE_KEY, dateKey);
+    // One write, so the position never detaches from its day.
+    function saveProgress(position as Number, dateKey as Number) as Void {
+        Storage.setValue(Rosary.PROGRESS_KEY, Rosary.encodeProgress(dateKey, position) as Array<Application.PropertyValueType>);
     }
 }
 

@@ -2,8 +2,9 @@ import Toybox.Attention;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// Button input for the main widget screen: START and DOWN move to the next bead, UP to the
-// previous one. BACK keeps its default behavior (exit); the progress is already saved.
+// Button input for the main widget screen: START and DOWN move to the next bead (on the Salve, they
+// pray it and finish the rosary), UP to the previous one. BACK keeps its default behavior (exit);
+// every move is already saved.
 class RosaryDelegate extends WatchUi.BehaviorDelegate {
 
     private var _view as RosaryView;
@@ -37,12 +38,13 @@ class RosaryDelegate extends WatchUi.BehaviorDelegate {
             return true;
         }
         _view.showStep(target);
-        getApp().saveStep(target, _dateKey);
+        getApp().saveProgress(target, _dateKey);
         pulse(vibe);
         return true;
     }
 
-    // Short pulse per bead, three pulses into a decade's Gloria, one long pulse at the Salve.
+    // Short pulse per bead, three pulses into a decade's Gloria, one long pulse when the Salve is
+    // prayed and the rosary ends.
     private function pulse(vibe as Rosary.Vibe) as Void {
         if (!(Attention has :vibrate)) {
             return;

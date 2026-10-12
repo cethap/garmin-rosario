@@ -174,7 +174,7 @@ class RosaryView extends WatchUi.View {
         for (var i = 0; i < items.size(); i++) {
             items[i].draw(dc);
         }
-        drawProgressBoxes(dc, Rosary.decadeAt(step));
+        drawProgressBoxes(dc, Rosary.partsDone(step));
     }
 
     // 10 segments clockwise from 12 o'clock: Avemarías reached are 3px thick, the rest a 1px track.

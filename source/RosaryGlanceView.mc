@@ -15,10 +15,10 @@ class RosaryGlanceView extends WatchUi.GlanceView {
         var app = getApp();
         var today = app.todayInfo();
         var set = Rosary.mysterySetForWeekday(today.day_of_week as Number);
-        var step = app.loadStep(app.dateKeyOf(today));
+        var position = app.loadProgress(app.dateKeyOf(today));
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        var items = Layout.glancePlan(set, step, dc.getHeight());
+        var items = Layout.glancePlan(set, position, dc.getHeight());
         for (var i = 0; i < items.size(); i++) {
             items[i].draw(dc);
         }

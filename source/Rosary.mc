@@ -27,7 +27,7 @@ module Rosary {
     }
 
     // Vibration a move produces: nothing, a short pulse, the multi-pulse that marks the Gloria
-    // after the 10 Avemarías of a decade, and the long one at the final Salve.
+    // after the 10 Avemarías of a decade, and the long one when the Salve is prayed (the end).
     enum Vibe {
         VIBE_NONE,
         VIBE_SHORT,
@@ -37,6 +37,11 @@ module Rosary {
 
     const STEP_COUNT = 72;
     const LAST_STEP = 71;
+    // Position once the Salve is prayed: the rosary is finished. Saved positions run 0..DONE, and the
+    // screen shows DONE as the Salve with every progress box filled.
+    const DONE = 72;
+    // Position of a day with no saved progress.
+    const NOT_STARTED = -1;
     const OPENING_STEPS = 6;
     const DECADE_STEPS = 13;
     const DECADES = 5;
@@ -93,12 +98,23 @@ module Rosary {
         return step;
     }
 
-    function next(step as Number) as Number {
-        return clampStep(step + 1);
+    // Positions add DONE past the Salve: next on the Salve prays it, prev from DONE goes back to it.
+    function next(position as Number) as Number {
+        return clampPosition(position + 1);
     }
 
-    function prev(step as Number) as Number {
-        return clampStep(step - 1);
+    function prev(position as Number) as Number {
+        return clampPosition(position - 1);
+    }
+
+    function clampPosition(position as Number) as Number {
+        if (position < 0) {
+            return 0;
+        }
+        if (position > DONE) {
+            return DONE;
+        }
+        return position;
     }
 
     // --- Step metadata ---
@@ -169,6 +185,15 @@ module Rosary {
             return decadeAt(step) == 0 ? OPENING_HAIL_MARYS : HAIL_MARYS_PER_DECADE;
         }
         return 0;
+    }
+
+    // Progress boxes filled (0..7): the parts of the rosary before the current one (opening,
+    // 5 mysteries, Salve), or all 7 once the Salve is prayed.
+    function partsDone(position as Number) as Number {
+        if (position >= DONE) {
+            return CLOSING_DECADE + 1;
+        }
+        return decadeAt(position);
     }
 
     // --- Mysteries ---
@@ -242,13 +267,15 @@ module Rosary {
 
     // --- Feedback ---
 
+    // Moves are between positions (0..DONE). Arriving at the Salve is an ordinary bead; praying it
+    // (into DONE) ends the rosary.
     function vibeForMove(from as Number, to as Number) as Vibe {
-        from = clampStep(from);
-        to = clampStep(to);
+        from = clampPosition(from);
+        to = clampPosition(to);
         if (from == to) {
             return VIBE_NONE;
         }
-        if (to == LAST_STEP) {
+        if (to == DONE) {
             return VIBE_END;
         }
         // Forward from the 10th Avemaría into a decade's Gloria. The opening Gloria stays a short pulse.
@@ -265,14 +292,19 @@ module Rosary {
         return setNamePlural(set);
     }
 
-    function glanceSummary(step as Number) as String {
-        if (step <= 0) {
+    // Today's progress from the saved position: "Sin empezar" (NOT_STARTED), "Inicio" (opening, also a
+    // day moved back to the Credo), "Misterio 2/5", "Salve" until it is prayed, "Completado" (DONE).
+    function glanceSummary(position as Number) as String {
+        if (position < 0) {
             return "Sin empezar";
         }
-        if (step >= LAST_STEP) {
+        if (position >= DONE) {
             return "Completado";
         }
-        var decade = decadeAt(step);
+        if (position == LAST_STEP) {
+            return prayerName(SALVE);
+        }
+        var decade = decadeAt(position);
         if (decade == 0) {
             return "Inicio";
         }
@@ -281,17 +313,32 @@ module Rosary {
 
     // --- Persistence ---
 
+    // Application.Storage key of the day's progress.
+    const PROGRESS_KEY = "progress";
+
     // Local date as YYYYMMDD.
     function dateKey(year as Number, month as Number, day as Number) as Number {
         return year * 10000 + month * 100 + day;
     }
 
-    // Today's saved step, or 0 when nothing valid was saved today.
-    function restoreStep(storedStep, storedDate, today as Number) as Number {
-        if (storedStep instanceof Number && storedDate instanceof Number && storedDate == today) {
-            return clampStep(storedStep);
+    // The day's progress as one stored value, [YYYYMMDD, position], so a single write keeps the
+    // position and its day together.
+    function encodeProgress(today as Number, position as Number) as Array<Number> {
+        return [today, position] as Array<Number>;
+    }
+
+    // The position saved for today (0..DONE), or NOT_STARTED when the value belongs to another day,
+    // is missing or is malformed.
+    function decodeProgress(stored, today as Number) as Number {
+        if (!(stored instanceof Array) || stored.size() != 2) {
+            return NOT_STARTED;
         }
-        return 0;
+        var date = stored[0];
+        var position = stored[1];
+        if (date instanceof Number && position instanceof Number && date == today && position >= 0 && position <= DONE) {
+            return position;
+        }
+        return NOT_STARTED;
     }
 
     // Splits text on "\n" (as Graphics.fitTextToArea returns it), so each line can be drawn with a

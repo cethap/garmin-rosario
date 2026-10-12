@@ -1,3 +1,4 @@
+import Toybox.Application;
 import Toybox.Lang;
 import Toybox.Test;
 
@@ -177,17 +178,20 @@ function decadeTitleUsesSpanishOrdinals(logger as Logger) as Boolean {
         && closing.equals("Final");
 }
 
+// Next goes one past the Salve, to the finished rosary (DONE), and stops there; prev from DONE goes
+// back to the Salve.
 (:test)
 function nextAndPrevClampToTheSequence(logger as Logger) as Boolean {
-    var actual = [Rosary.next(0), Rosary.next(70), Rosary.next(71), Rosary.prev(0), Rosary.prev(1), Rosary.prev(71),
-        Rosary.clampStep(-3), Rosary.clampStep(99), Rosary.clampStep(40)];
-    logger.debug("moves=" + actual);
-    return actual.toString().equals([1, 71, 71, 0, 0, 70, 0, 71, 40].toString());
+    var actual = [Rosary.next(0), Rosary.next(70), Rosary.next(71), Rosary.next(72), Rosary.prev(0), Rosary.prev(1),
+        Rosary.prev(71), Rosary.prev(72), Rosary.clampStep(-3), Rosary.clampStep(99), Rosary.clampStep(40)];
+    logger.debug("moves=" + actual + " done=" + Rosary.DONE);
+    return Rosary.DONE == 72 && actual.toString().equals([1, 71, 72, 72, 0, 0, 70, 71, 0, 71, 40].toString());
 }
 
+// The long vibration marks the end of the Rosary: praying the Salve (71 -> DONE), not arriving at it.
 (:test)
 function vibrationMarksGloriaAfterTenHailMarysAndTheEnd(logger as Logger) as Boolean {
-    var none = Rosary.vibeForMove(71, 71);
+    var none = Rosary.vibeForMove(72, 72);
     var still = Rosary.vibeForMove(0, 0);
     var bead = Rosary.vibeForMove(0, 1);
     var openingGloria = Rosary.vibeForMove(4, 5);
@@ -195,40 +199,69 @@ function vibrationMarksGloriaAfterTenHailMarysAndTheEnd(logger as Logger) as Boo
     var lastGloria = Rosary.vibeForMove(68, 69);
     var back = Rosary.vibeForMove(17, 16);
     var ninth = Rosary.vibeForMove(15, 16);
-    var end = Rosary.vibeForMove(70, 71);
-    var leaveEnd = Rosary.vibeForMove(71, 70);
+    var salve = Rosary.vibeForMove(70, 71);
+    var end = Rosary.vibeForMove(71, 72);
+    var leaveSalve = Rosary.vibeForMove(71, 70);
+    var leaveEnd = Rosary.vibeForMove(72, 71);
     logger.debug("none=" + none + " still=" + still + " bead=" + bead + " openingGloria=" + openingGloria
         + " firstGloria=" + firstGloria + " lastGloria=" + lastGloria + " back=" + back + " ninth=" + ninth
-        + " end=" + end + " leaveEnd=" + leaveEnd);
+        + " salve=" + salve + " end=" + end + " leaveSalve=" + leaveSalve + " leaveEnd=" + leaveEnd);
     return none == Rosary.VIBE_NONE && still == Rosary.VIBE_NONE && bead == Rosary.VIBE_SHORT
         && openingGloria == Rosary.VIBE_SHORT && firstGloria == Rosary.VIBE_GLORIA && lastGloria == Rosary.VIBE_GLORIA
-        && back == Rosary.VIBE_SHORT && ninth == Rosary.VIBE_SHORT && end == Rosary.VIBE_END && leaveEnd == Rosary.VIBE_SHORT;
+        && back == Rosary.VIBE_SHORT && ninth == Rosary.VIBE_SHORT && salve == Rosary.VIBE_SHORT
+        && end == Rosary.VIBE_END && leaveSalve == Rosary.VIBE_SHORT && leaveEnd == Rosary.VIBE_SHORT;
 }
 
+// A day not started (-1) differs from one started and moved back to the Credo (0); the Salve reads
+// "Salve" until it is prayed, and only the finished rosary (DONE) reads "Completado".
 (:test)
 function glanceShowsTheDaySetAndProgress(logger as Logger) as Boolean {
     var title = Rosary.glanceTitle(Rosary.JOYFUL);
-    var steps = [0, 3, 6, 20, 70, 71];
+    var positions = [Rosary.NOT_STARTED, 0, 3, 6, 20, 70, 71, Rosary.DONE];
     var actual = "";
-    for (var i = 0; i < steps.size(); i++) {
-        actual += (i > 0 ? "," : "") + Rosary.glanceSummary(steps[i]);
+    for (var i = 0; i < positions.size(); i++) {
+        actual += (i > 0 ? "," : "") + Rosary.glanceSummary(positions[i]);
     }
     logger.debug("title=" + title + " summaries=" + actual);
-    return title.equals("Gozosos")
-        && actual.equals("Sin empezar,Inicio,Misterio 1/5,Misterio 2/5,Misterio 5/5,Completado");
+    return title.equals("Gozosos") && Rosary.NOT_STARTED == -1
+        && actual.equals("Sin empezar,Inicio,Inicio,Misterio 1/5,Misterio 2/5,Misterio 5/5,Salve,Completado");
 }
 
+// The day's progress is one stored value, [YYYYMMDD, position], that decodes back to the position
+// for the same day only. Anything else reads as a day not started.
 (:test)
-function restoreStepKeepsOnlyTodaysProgress(logger as Logger) as Boolean {
+function progressRoundTripsForTodayOnly(logger as Logger) as Boolean {
     var today = Rosary.dateKey(2026, 10, 12);
-    var sameDay = Rosary.restoreStep(30, today, today);
-    var otherDay = Rosary.restoreStep(30, 20261011, today);
-    var missing = Rosary.restoreStep(null, null, today);
-    var outOfRange = Rosary.restoreStep(99, today, today);
-    var wrongType = Rosary.restoreStep("30", today, today);
-    logger.debug("today=" + today + " same=" + sameDay + " other=" + otherDay + " missing=" + missing
-        + " range=" + outOfRange + " type=" + wrongType);
-    return today == 20261012 && sameDay == 30 && otherDay == 0 && missing == 0 && outOfRange == 71 && wrongType == 0;
+    var positions = [0, 30, Rosary.LAST_STEP, Rosary.DONE];
+    var roundTrips = true;
+    for (var i = 0; i < positions.size(); i++) {
+        var stored = Rosary.encodeProgress(today, positions[i]);
+        roundTrips = roundTrips && stored.size() == 2 && Rosary.decodeProgress(stored, today) == positions[i];
+    }
+    var newDay = Rosary.decodeProgress(Rosary.encodeProgress(20261011, 30), today);
+    var malformed = [null, 30, "30", [today], [today, "30"], ["20261012", 30], [today, 30, 1], [today, -1], [today, 73],
+        {"date" => today, "position" => 30}];
+    var rejected = "";
+    var allRejected = true;
+    for (var i = 0; i < malformed.size(); i++) {
+        var position = Rosary.decodeProgress(malformed[i], today);
+        rejected += position + " ";
+        allRejected = allRejected && position == Rosary.NOT_STARTED;
+    }
+    logger.debug("today=" + today + " roundTrips=" + roundTrips + " newDay=" + newDay + " malformed=" + rejected);
+    return today == 20261012 && roundTrips && newDay == Rosary.NOT_STARTED && allRejected;
+}
+
+// Progress boxes done: every part before the current one, and all 7 once the Salve is prayed.
+(:test)
+function progressBoxesFillWhenTheRosaryIsDone(logger as Logger) as Boolean {
+    var positions = [0, 5, 6, 70, 71, Rosary.DONE];
+    var actual = [];
+    for (var i = 0; i < positions.size(); i++) {
+        actual.add(Rosary.partsDone(positions[i]));
+    }
+    logger.debug("partsDone=" + actual);
+    return actual.toString().equals([0, 0, 1, 5, 6, 7].toString());
 }
 
 (:test)
@@ -272,4 +305,41 @@ function splitLinesBreaksWrappedText(logger as Logger) as Boolean {
     return two.size() == 2 && two[0].equals("1er Misterio") && two[1].equals("Gozoso")
         && one.size() == 1 && one[0].equals("Inicio")
         && three.size() == 3 && three[2].equals("c");
+}
+
+// The buttons save every move at once, as one value. START or DOWN on the Salve prays it and finishes
+// the rosary; pressing on past the end changes nothing, and UP goes back to the Salve. Opening the
+// screen saves nothing, so a day only counts as started once a bead moves. Uses the real Storage and
+// puts back what was there.
+(:test)
+function delegateSavesEachMoveAndFinishesOnTheSalve(logger as Logger) as Boolean {
+    var app = getApp();
+    var today = 20261012;
+    var before = Application.Storage.getValue(Rosary.PROGRESS_KEY);
+    var ok = false;
+    try {
+        Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
+        var view = new RosaryView(70, Rosary.JOYFUL);
+        var delegate = new RosaryDelegate(view, today);
+        var opened = app.loadProgress(today);
+        delegate.onSelect();
+        var atSalve = app.loadProgress(today);
+        delegate.onNextPage();
+        var done = app.loadProgress(today);
+        delegate.onSelect();
+        var stillDone = app.loadProgress(today);
+        delegate.onPreviousPage();
+        var back = app.loadProgress(today);
+        logger.debug("opened=" + opened + " atSalve=" + atSalve + " done=" + done + " stillDone=" + stillDone
+            + " back=" + back + " viewStep=" + view.step + " stored=" + Application.Storage.getValue(Rosary.PROGRESS_KEY));
+        ok = opened == Rosary.NOT_STARTED && atSalve == Rosary.LAST_STEP && done == Rosary.DONE
+            && stillDone == Rosary.DONE && back == Rosary.LAST_STEP && view.step == Rosary.LAST_STEP;
+    } finally {
+        if (before == null) {
+            Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
+        } else {
+            Application.Storage.setValue(Rosary.PROGRESS_KEY, before as Application.PropertyValueType);
+        }
+    }
+    return ok;
 }
