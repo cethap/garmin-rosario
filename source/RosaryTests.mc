@@ -214,7 +214,7 @@ function glanceShowsTheDaySetAndProgress(logger as Logger) as Boolean {
         actual += (i > 0 ? "," : "") + Rosary.glanceSummary(steps[i]);
     }
     logger.debug("title=" + title + " summaries=" + actual);
-    return title.equals("Rosario · Gozosos")
+    return title.equals("Gozosos")
         && actual.equals("Sin empezar,Inicio,Misterio 1/5,Misterio 2/5,Misterio 5/5,Completado");
 }
 

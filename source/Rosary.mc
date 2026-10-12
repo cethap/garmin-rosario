@@ -260,8 +260,9 @@ module Rosary {
 
     // --- Glance ---
 
+    // The day's mysteries ("Gozosos"). A "Rosario · " prefix does not fit beside the subscreen.
     function glanceTitle(set as MysterySet) as String {
-        return "Rosario · " + setNamePlural(set);
+        return setNamePlural(set);
     }
 
     function glanceSummary(step as Number) as String {
