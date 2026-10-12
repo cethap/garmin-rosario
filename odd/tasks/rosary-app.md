@@ -19,8 +19,8 @@ Authorized by the user ("dale, arranquemos con la app del rosario en su propio r
 - Widget app with a glance in the Instinct 2 glance loop (DOWN from the watch face, then START).
 - Sequence (72 beads): Credo, Padre Nuestro, 3 Avemarías, Gloria; then 5 mysteries × (Padre Nuestro, 10 Avemarías, Gloria, Oh Jesús mío); then Salve.
 - Mysteries by weekday: Monday/Saturday Gozosos, Tuesday/Friday Dolorosos, Wednesday/Sunday Gloriosos, Thursday Luminosos.
-- Buttons: START or DOWN next bead, UP previous bead, BACK exit (progress saved for the day).
-- Vibration: short pulse on each bead. When the 10 Avemarías of a decade end and the Gloria starts, a distinct multi-pulse pattern (3 pulses), so the user feels it without looking (user request). A long vibration at the end of the Rosary.
+- Buttons: START or DOWN next bead, UP previous bead, BACK exit (progress saved for the day). Hold UP (MENU) starts the day over after a YES/NO confirmation (user request after the on-device check: "no hay opción de resetear").
+- Vibration: short pulse on each bead. When the 10 Avemarías of a decade end and the Gloria starts, a distinct multi-pulse pattern (3 pulses), so the user feels it without looking (user request). After the on-device check the user asked for it stronger and easier to tell apart ("me gustaría más vibración cada gloria que se pueda diferenciar mucho mejor"). A long vibration at the end of the Rosary.
 - Small time on screen; the 10 Avemarías of the current decade as a 10-segment ring in the subscreen.
 
 Out of scope for the MVP: liturgical-season variants (Advent or Lent Sundays), full prayer texts, settings, other devices.
@@ -51,6 +51,8 @@ Out of scope for the MVP: liturgical-season variants (Advent or Lent Sundays), f
 | R7b | `fix(view)`: prove every main-screen text fits for all 72 steps (and every clock time), fix what does not | delegated writer (2+ non-trivial files) | [x] 8f808e3. RED: the pre-fix binary fails `mainScreenTextStaysInsideTheVisibleArea` and `mainScreenClockStaysInsideTheVisibleArea` (24 passed, 2 failed) -> GREEN 28/28; builds 0 warnings |
 | R7c | `fix(glance)`: check text against the watch face's per-row visible-area table (test-only `VisibleArea` module) instead of circles; glance set name at the top of the slot and progress at the bottom, so the set name also shows in the lower glance slot | delegated writer (2+ non-trivial files) | [x] b975433. RED: the new `glanceTitleStaysVisibleInTheLowerSlot` fails on the old layout (28 passed, 1 failed) -> GREEN 29/29; builds 0 warnings |
 | R8 | `test(view)`: one source of truth for the Avemaría ring center (`MainLayout.ring()`, used by the view and the tests) and a test that the device's subscreen matches the window the checks use (advisory finding `R3-subscreen-number-check-tautological`) | delegated writer, batched with R7c | [x] dba0aa9. RED at compile time (3x undefined `ring`) -> GREEN 30/30; builds 0 warnings |
+| R9 | `feat(vibe)`: Gloria vibration much easier to tell apart: 3 full-strength 350ms pulses, 200ms apart (1.45s); bead and end pulses unchanged; patterns as pure data (`Rosary.vibePattern`) with tests for strength, length and distinctness | delegated writer (2+ non-trivial files) | [x] d385891. RED: the old pattern moved into `vibePattern` unchanged fails `gloriaVibrationLastsOverASecond` (690ms) and `gloriaVibrationStandsApartFromTheBeadAndTheEnd` (32 passed, 2 failed) -> GREEN 34/34; builds 0 warnings |
+| R10 | `feat(reset)`: hold UP (MENU) asks "¿Reiniciar el rosario?" (`WatchUi.Confirmation`); YES clears today's progress, shows the Credo, one short pulse; NO changes nothing. `RosarioApp.resetProgress`, `RosaryDelegate.restart`, `ResetDelegate` | delegated writer (2+ non-trivial files) | [x] 0048c74. RED with a do-nothing `ResetDelegate` stub: `resetStartsTodayOverOnlyWhenConfirmed` fails (`cleared=31 clearedStep=31`, 35 passed, 1 failed) -> GREEN 36/36; builds 0 warnings |
 
 ## Acceptance criteria
 
@@ -58,6 +60,8 @@ Out of scope for the MVP: liturgical-season variants (Advent or Lent Sundays), f
 - The sequence has 72 steps in the chosen order. The weekday mapping matches the scope.
 - Next and prev never go out of range. Progress survives exiting and reopening the same day, and resets on a new day.
 - The glance shows the day's mysteries and progress.
+- The Gloria after 10 Avemarías vibrates as 3 or more full-strength pulses lasting at least 1.2s, distinct from the bead and end pulses, within one `Attention.vibrate` call.
+- Hold UP and YES clears today's progress ("Sin empezar") and returns to the Credo; NO changes nothing.
 
 ## Checks
 
@@ -86,7 +90,12 @@ Out of scope for the MVP: liturgical-season variants (Advent or Lent Sundays), f
 - R8: `MainLayout.ring()` reads `WatchUi.getSubscreen()` (falls back to the Instinct 2's 144,31 r26); the view and the layout tests both take the ring from it. `ringSitsOnTheDeviceSubscreen` proves the simulator's subscreen (113,0 62x62) is the window the checks use; the always-true centering assertion is gone.
 - README file table updated for `VisibleArea.mc` (e911a7c). Review assessment over `bdb983d..e911a7c`: medium, `under_budget`, so the slice stays pending until a later commit reaches the delivery budget.
 - The simulator stopped running during the R7c/R8 writer session (no process, no crash report); the writer started it again with the SDK's `connectiq` launcher.
+- User feedback on the physical Instinct 2 (sideloaded): the widget looks right on the watch and the user likes it; the clipping seen in the simulator does not show on the device. Two requests followed, which became R9 and R10: a stronger Gloria vibration that is much easier to tell apart, and a way to reset.
+- R9: `Rosary.vibePattern(vibe)` returns `[duty %, ms]` steps (duty 0 is a silence), built on each call so the glance keeps no copy; the delegate turns them into `Attention.VibeProfile`s. SDK limit (Connect IQ 9.2.0 docs, `Attention.vibrate`, API level 1.0.0): an array of at least 1 and at most 8 `VibeProfile`s per call; `VibeProfile` takes a duty of 0..100 and a length in ms with no documented maximum. Patterns: bead `[[50, 100]]`, Gloria `[[100, 350], [0, 200], [100, 350], [0, 200], [100, 350]]` (5 profiles, 1.45s), end `[[100, 1000]]`. Tests: 3+ pulses all at 100% within the 8-profile limit; at least 1.2s in total; bead and end are single pulses, each Gloria pulse is at least 3x the bead's length and shorter than the end pulse, and the silences are at least 150ms; the bead and end patterns are pinned as before.
+- R10: the Instinct 2 sends hold UP as `onMenu` (simulator key map: `"behavior": "onMenu"`, `"isHold": true`, at the UP key's location). `onMenu` pushes `WatchUi.Confirmation` with `Rez.Strings.ResetPrompt` ("¿Reiniciar el rosario?") and a `ResetDelegate`; on `CONFIRM_YES` it calls `RosaryDelegate.restart()`: `RosarioApp.resetProgress()` deletes the one stored value (any other day's value already reads as not started), `showStep(0)` (requests the update), and a `VIBE_SHORT` pulse. As on opening, nothing is saved until a bead moves. The test drives `ResetDelegate.onResponse` with NO then YES over the real Storage, checks "Sin empezar" and that the next move saves position 1, and restores Storage. `onMenu` itself (the push of the confirmation) has no unit test; checking it needs a simulator or watch press.
+- R9/R10 verification: final debug build 0 warnings, test build 0 warnings and `monkeydo -t` PASSED 36/36, release build (`-r`) 0 warnings, `Rosario.prg` 15340 bytes (14:11:35).
+- Simulator hiccup during R10: two `monkeydo -t` runs gave no output before the 180s timeout and left idle `monkeydo` clients connected to the simulator (stopping them was not permitted in the writer session). The run that followed the first hang printed that hung run's R10 RED output, so the RED evidence is identified by its content (the R10 tests and `cleared=31`), not by the binary named on the command line. The GREEN and final runs answered normally.
 
 ## Next step
 
-The user checks the glance in the selected and the lower glance slot, and the main view, in the simulator and on the watch.
+The user sideloads the new `Rosario.prg` and checks on the watch: the Gloria pulses after each 10th Avemaría, and hold UP -> "¿Reiniciar el rosario?" -> YES (glance "Sin empezar", screen on the Credo) and NO. Then the review slice over the pending commits.
