@@ -41,11 +41,11 @@ Out of scope for the MVP: liturgical-season variants (Advent or Lent Sundays), f
 
 | ID | Task | Route | Status |
 |----|------|-------|--------|
-| R1 | `chore`: project skeleton (manifest as a widget for instinct2, jungle, Spanish strings, launcher icon, app class, empty view and glance) that builds with 0 warnings | delegated writer (2+ non-trivial new files; parent context past the backstop) | [ ] |
-| R2 | `feat`: pure `Rosary` module: the 72-step sequence, mysteries by weekday with their Spanish names, step metadata (prayer, decade, bead), clamped next/prev, glance summary, with `(:test)` unit tests first (RED -> GREEN) | delegated writer | [ ] |
-| R3 | `feat`: main view and delegate: small time, mystery title and name, current prayer, 10-bead ring in the subscreen, overall progress, buttons, vibration, per-day progress in Application.Storage | delegated writer | [ ] |
-| R4 | `feat`: glance view ("Gozosos · 2/5" or "Sin empezar") | delegated writer | [ ] |
-| R5 | `docs`: README with features, build, test and sideload steps | delegated writer | [ ] |
+| R1 | `chore`: project skeleton (manifest as a widget for instinct2, jungle, Spanish strings, launcher icon, app class, empty view and glance) that builds with 0 warnings | delegated writer (2+ non-trivial new files; parent context past the backstop) | [x] 40dad91 (0 warnings) |
+| R2 | `feat`: pure `Rosary` module: the 72-step sequence, mysteries by weekday with their Spanish names, step metadata (prayer, decade, bead), clamped next/prev, glance summary, with `(:test)` unit tests first (RED -> GREEN) | delegated writer | [x] a999c42 (RED: 177 undefined symbols -> GREEN 19/19) |
+| R3 | `feat`: main view and delegate: small time, mystery title and name, current prayer, 10-bead ring in the subscreen, overall progress, buttons, vibration, per-day progress in Application.Storage | delegated writer | [x] 2b827da (RED formatClock/splitLines -> GREEN 22/22; harness rendered all 72 steps, 18.5KB, 3ms per render) |
+| R4 | `feat`: glance view ("Gozosos · 2/5" or "Sin empezar") | delegated writer | [x] bec9a8d (glance 13.3KB of 28.5KB, reads Storage) |
+| R5 | `docs`: README with features, build, test and sideload steps | delegated writer | [x] 45d8366 |
 
 ## Acceptance criteria
 
@@ -64,6 +64,9 @@ Out of scope for the MVP: liturgical-season variants (Advent or Lent Sundays), f
 
 - Repo initialized (`f2652af`), branch `feat/rosary-mvp`.
 
+- Writer deviations (accepted): the glance reads "Rosario · <set>" over "Sin empezar" / "Inicio" / "Misterio n/5" / "Completado"; the ring fill includes the current Avemaría; wrapped text is cached per step (fitTextToArea for ~20 screens in one onUpdate tripped the watchdog); progress keeps the date the screen was opened, so a rosary prayed across midnight keeps that day's mysteries; added `formatClock` and `splitLines` with tests. App UUID `88956777-ab95-491a-a90a-85aedd95a9c1`.
+- Parent spot check: app build 0 warnings; `monkeydo -t` PASSED 22/22; clean runtime log. The simulator opens the widget in glance mode; START opens the main view.
+
 ## Next step
 
-R1-R5 via one bounded writer.
+User check in the simulator and on the watch, then visual iteration.
