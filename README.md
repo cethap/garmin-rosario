@@ -8,15 +8,15 @@ A fast Connect IQ widget that guides the Rosary bead by bead on the Garmin Insti
 - **Mysteries of the day**: Gozosos on Monday and Saturday, Dolorosos on Tuesday and Friday, Gloriosos on Wednesday and Sunday, Luminosos on Thursday.
 - **Screen**: a small clock (follows the 12/24-hour setting), the decade title ("1er Misterio Gozoso"), the mystery name, the current prayer in large type ("Avemaría 7"), and 7 progress boxes (opening, 5 mysteries, closing).
 - **Subscreen ring**: 10 segments that fill as you pray the Avemarías of the decade, with the current Avemaría number in the center.
-- **Vibration**: a short pulse on each bead. Three pulses when the 10 Avemarías end and the Gloria starts, so you can feel it without looking. A long pulse at the final Salve.
+- **Vibration**: a short pulse on each bead. Three pulses when the 10 Avemarías end and the Gloria starts, so you can feel it without looking. A long pulse when you pray the Salve: press START or DOWN on the Salve to finish the Rosary.
 - **Progress saved for the day**: leave and come back and you continue where you were. A new day starts from the beginning.
-- **Glance**: the day's mysteries and today's progress ("Rosario · Gozosos" over "Misterio 2/5", "Sin empezar" or "Completado").
+- **Glance**: the day's mysteries and today's progress ("Gozosos" over "Sin empezar", "Inicio", "Misterio 2/5", "Salve" or "Completado"). "Completado" appears once the Salve is prayed.
 
 ## Controls
 
 | Button | Action |
 |--------|--------|
-| START or DOWN | Next bead |
+| START or DOWN | Next bead (on the Salve: finish the Rosary) |
 | UP | Previous bead |
 | BACK | Exit (progress is already saved) |
 
@@ -38,7 +38,7 @@ monkeyc -f monkey.jungle -d instinct2 -o bin/Rosario.prg -y /path/to/developer_k
 
 ### Unit Tests
 
-The rosary logic in `source/Rosary.mc` is pure and covered by Run No Evil tests in `source/RosaryTests.mc`. Tests are excluded from regular builds.
+The rosary logic in `source/Rosary.mc` is pure and covered by Run No Evil tests in `source/RosaryTests.mc`. `source/LayoutTests.mc` measures every text the glance and the main screen draw with the real fonts and checks it against the visible area of the Instinct 2. Tests are excluded from regular builds.
 
 ```sh
 monkeyc -f monkey.jungle -d instinct2 -o bin/RosarioTest.prg -y /path/to/developer_key -w -t
@@ -67,8 +67,10 @@ The simulator shows the glance first. Press START in the simulator to open the f
 | Path | Purpose |
 |------|---------|
 | `source/Rosary.mc` | Pure rosary logic: sequence, mysteries, labels, vibration, saved progress |
-| `source/RosaryTests.mc` | Unit tests for `Rosary` |
-| `source/RosaryView.mc` | Main screen layout |
+| `source/RosaryTests.mc` | Unit tests for `Rosary` and the buttons |
+| `source/Layout.mc` | Text layout of the glance, shared with the tests |
+| `source/LayoutTests.mc` | Visible area of the Instinct 2 and layout tests |
+| `source/RosaryView.mc` | Main screen and its layout |
 | `source/RosaryDelegate.mc` | Buttons, vibration and saving |
 | `source/RosaryGlanceView.mc` | Glance |
 | `source/RosarioApp.mc` | App entry point and saved progress |
