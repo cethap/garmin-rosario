@@ -8,7 +8,7 @@ A fast Connect IQ widget that guides the Rosary bead by bead on the Garmin Insti
 - **Mysteries of the day**: Gozosos on Monday and Saturday, Dolorosos on Tuesday and Friday, Gloriosos on Wednesday and Sunday, Luminosos on Thursday.
 - **Screen**: a small clock (follows the 12/24-hour setting), the decade title ("1er Misterio Gozoso"), the mystery name, the current prayer in large type ("Avemaría 7"), and 7 progress boxes (opening, 5 mysteries, closing).
 - **Subscreen ring**: 10 segments that fill as you pray the Avemarías of the decade, with the current Avemaría number in the center.
-- **Vibration**: a short pulse on each bead. Three pulses when the 10 Avemarías end and the Gloria starts, so you can feel it without looking. A long pulse when you pray the Salve: press START or DOWN on the Salve to finish the Rosary.
+- **Vibration**: a soft, short tap (100 ms) on each bead. When the 10 Avemarías end and the Gloria starts, three strong pulses (350 ms each, 200 ms apart, about 1.5 s in total), so you can tell it from a bead without looking. One long pulse (1 s) when you pray the Salve: press START or DOWN on the Salve to finish the Rosary.
 - **Progress saved for the day**: leave and come back and you continue where you were. A new day starts from the beginning.
 - **Glance**: the day's mysteries and today's progress ("Gozosos" over "Sin empezar", "Inicio", "Misterio 2/5", "Salve" or "Completado"). "Completado" appears once the Salve is prayed.
 

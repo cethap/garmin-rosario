@@ -212,6 +212,106 @@ function vibrationMarksGloriaAfterTenHailMarysAndTheEnd(logger as Logger) as Boo
         && end == Rosary.VIBE_END && leaveSalve == Rosary.VIBE_SHORT && leaveEnd == Rosary.VIBE_SHORT;
 }
 
+// Reads the [duty %, ms] steps of Rosary.vibePattern.
+(:test)
+module VibeCheck {
+    // Attention.vibrate plays at most 8 VibeProfiles per call.
+    const PROFILE_LIMIT = 8;
+
+    // Steps that vibrate (duty above 0).
+    function pulses(pattern as Array<Array<Number>>) as Array<Array<Number>> {
+        var found = [] as Array<Array<Number>>;
+        for (var i = 0; i < pattern.size(); i++) {
+            if (pattern[i][0] > 0) {
+                found.add(pattern[i]);
+            }
+        }
+        return found;
+    }
+
+    // Lengths of the silences (duty 0), in ms.
+    function silences(pattern as Array<Array<Number>>) as Array<Number> {
+        var found = [] as Array<Number>;
+        for (var i = 0; i < pattern.size(); i++) {
+            if (pattern[i][0] == 0) {
+                found.add(pattern[i][1]);
+            }
+        }
+        return found;
+    }
+
+    function totalMs(pattern as Array<Array<Number>>) as Number {
+        var total = 0;
+        for (var i = 0; i < pattern.size(); i++) {
+            total += pattern[i][1];
+        }
+        return total;
+    }
+
+    // Fits one Attention.vibrate call: up to PROFILE_LIMIT steps, each with a duty of 0..100 and a
+    // positive length.
+    function playable(pattern as Array<Array<Number>>) as Boolean {
+        var ok = pattern.size() <= PROFILE_LIMIT;
+        for (var i = 0; i < pattern.size(); i++) {
+            ok = ok && pattern[i].size() == 2 && pattern[i][0] >= 0 && pattern[i][0] <= 100 && pattern[i][1] > 0;
+        }
+        return ok;
+    }
+}
+
+// The Gloria after the 10 Avemarías is felt without looking: at least 3 pulses, all at full strength,
+// in one Attention.vibrate call.
+(:test)
+function gloriaVibrationIsThreeFullStrengthPulses(logger as Logger) as Boolean {
+    var gloria = Rosary.vibePattern(Rosary.VIBE_GLORIA);
+    var pulses = VibeCheck.pulses(gloria);
+    var strong = true;
+    for (var i = 0; i < pulses.size(); i++) {
+        strong = strong && pulses[i][0] == 100;
+    }
+    logger.debug("gloria=" + gloria + " pulses=" + pulses.size());
+    return pulses.size() >= 3 && strong && VibeCheck.playable(gloria);
+}
+
+(:test)
+function gloriaVibrationLastsOverASecond(logger as Logger) as Boolean {
+    var total = VibeCheck.totalMs(Rosary.vibePattern(Rosary.VIBE_GLORIA));
+    logger.debug("gloria total ms=" + total);
+    return total >= 1200;
+}
+
+// The bead and the end are one pulse each. Each Gloria pulse is at least 3 times the bead's length and
+// shorter than the end's, and the pulses are apart by at least 150ms of silence, so the Gloria reads
+// neither as quick beads nor as the one unbroken end pulse.
+(:test)
+function gloriaVibrationStandsApartFromTheBeadAndTheEnd(logger as Logger) as Boolean {
+    var bead = VibeCheck.pulses(Rosary.vibePattern(Rosary.VIBE_SHORT));
+    var end = VibeCheck.pulses(Rosary.vibePattern(Rosary.VIBE_END));
+    var gloria = Rosary.vibePattern(Rosary.VIBE_GLORIA);
+    var pulses = VibeCheck.pulses(gloria);
+    var silences = VibeCheck.silences(gloria);
+    var ok = bead.size() == 1 && end.size() == 1 && pulses.size() >= 3 && silences.size() == pulses.size() - 1;
+    for (var i = 0; ok && i < pulses.size(); i++) {
+        ok = pulses[i][1] >= 3 * bead[0][1] && pulses[i][1] < end[0][1] && pulses[i][0] >= bead[0][0];
+    }
+    for (var i = 0; ok && i < silences.size(); i++) {
+        ok = silences[i] >= 150;
+    }
+    logger.debug("bead=" + bead + " end=" + end + " gloria=" + gloria);
+    return ok;
+}
+
+// The bead pulse and the end pulse stay as the user knows them; no move plays nothing.
+(:test)
+function beadAndEndVibrationsKeepTheirPulse(logger as Logger) as Boolean {
+    var none = Rosary.vibePattern(Rosary.VIBE_NONE);
+    var bead = Rosary.vibePattern(Rosary.VIBE_SHORT);
+    var end = Rosary.vibePattern(Rosary.VIBE_END);
+    logger.debug("none=" + none + " bead=" + bead + " end=" + end);
+    return none.size() == 0 && bead.toString().equals("[[50, 100]]") && end.toString().equals("[[100, 1000]]")
+        && VibeCheck.playable(bead) && VibeCheck.playable(end);
+}
+
 // A day not started (-1) differs from one started and moved back to the Credo (0); the Salve reads
 // "Salve" until it is prayed, and only the finished rosary (DONE) reads "Completado".
 (:test)

@@ -285,6 +285,25 @@ module Rosary {
         return VIBE_SHORT;
     }
 
+    // The vibration as [duty %, ms] steps played in order; duty 0 is a silence. The delegate turns them
+    // into Attention.VibeProfiles: Attention.vibrate takes at most 8 per call (the SDK documents no
+    // maximum length). Built on each call, so the glance keeps no copy in memory.
+    //   bead:   one soft 100ms tap
+    //   Gloria: 3 full-strength 350ms pulses, 200ms apart (1.45s), unlike any bead
+    //   end:    one unbroken 1s pulse
+    function vibePattern(vibe as Vibe) as Array<Array<Number>> {
+        if (vibe == VIBE_SHORT) {
+            return [[50, 100]] as Array<Array<Number>>;
+        }
+        if (vibe == VIBE_GLORIA) {
+            return [[100, 350], [0, 200], [100, 350], [0, 200], [100, 350]] as Array<Array<Number>>;
+        }
+        if (vibe == VIBE_END) {
+            return [[100, 1000]] as Array<Array<Number>>;
+        }
+        return [] as Array<Array<Number>>;
+    }
+
     // --- Glance ---
 
     // The day's mysteries ("Gozosos"). A "Rosario · " prefix does not fit beside the subscreen.

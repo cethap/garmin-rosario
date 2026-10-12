@@ -43,26 +43,17 @@ class RosaryDelegate extends WatchUi.BehaviorDelegate {
         return true;
     }
 
-    // Short pulse per bead, three pulses into a decade's Gloria, one long pulse when the Salve is
-    // prayed and the rosary ends.
+    // Plays Rosary.vibePattern: a short pulse per bead, three strong pulses into a decade's Gloria,
+    // one long pulse when the Salve is prayed and the rosary ends.
     private function pulse(vibe as Rosary.Vibe) as Void {
-        if (!(Attention has :vibrate)) {
+        var pattern = Rosary.vibePattern(vibe);
+        if (!(Attention has :vibrate) || pattern.size() == 0) {
             return;
         }
-        var pattern;
-        if (vibe == Rosary.VIBE_GLORIA) {
-            pattern = [
-                new Attention.VibeProfile(100, 150),
-                new Attention.VibeProfile(0, 120),
-                new Attention.VibeProfile(100, 150),
-                new Attention.VibeProfile(0, 120),
-                new Attention.VibeProfile(100, 150)
-            ];
-        } else if (vibe == Rosary.VIBE_END) {
-            pattern = [new Attention.VibeProfile(100, 1000)];
-        } else {
-            pattern = [new Attention.VibeProfile(50, 100)];
+        var profiles = [] as Array<Attention.VibeProfile>;
+        for (var i = 0; i < pattern.size(); i++) {
+            profiles.add(new Attention.VibeProfile(pattern[i][0], pattern[i][1]));
         }
-        Attention.vibrate(pattern);
+        Attention.vibrate(profiles);
     }
 }
