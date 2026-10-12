@@ -293,6 +293,34 @@ module Rosary {
         return 0;
     }
 
+    // Splits text on "\n" (as Graphics.fitTextToArea returns it), so each line can be drawn with a
+    // tighter pitch than the font's own line spacing.
+    function splitLines(text as String) as Array<String> {
+        var lines = [] as Array<String>;
+        var rest = text;
+        var cut = rest.find("\n");
+        while (cut != null) {
+            lines.add(rest.substring(0, cut) as String);
+            rest = rest.substring(cut + 1, rest.length()) as String;
+            cut = rest.find("\n");
+        }
+        lines.add(rest);
+        return lines;
+    }
+
+    // --- Clock ---
+
+    // "HH:MM" honoring the device 12/24h setting; both modes keep the leading zero (08:05).
+    function formatClock(hour as Number, minute as Number, is24Hour as Boolean) as String {
+        if (!is24Hour) {
+            hour = hour % 12;
+            if (hour == 0) {
+                hour = 12;
+            }
+        }
+        return hour.format("%02d") + ":" + minute.format("%02d");
+    }
+
     // --- Subscreen ring geometry ---
 
     // Ring segment i (0..9), clockwise from 12 o'clock: 30 degree arcs with 6 degree gaps,

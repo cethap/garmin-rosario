@@ -241,3 +241,35 @@ function ringSegmentsStartAtNoonClockwise(logger as Logger) as Boolean {
         && wrap[0] == 339 && wrap[1] == 309
         && last[0] == 123 && last[1] == 93;
 }
+
+(:test)
+function formatClockKeepsLeadingZeroIn24h(logger as Logger) as Boolean {
+    var midnight = Rosary.formatClock(0, 5, true);
+    var morning = Rosary.formatClock(9, 7, true);
+    var afternoon = Rosary.formatClock(13, 30, true);
+    logger.debug("0:05=" + midnight + " 9:07=" + morning + " 13:30=" + afternoon);
+    return midnight.equals("00:05") && morning.equals("09:07") && afternoon.equals("13:30");
+}
+
+(:test)
+function formatClockWrapsTo12WithLeadingZeroIn12h(logger as Logger) as Boolean {
+    var midnight = Rosary.formatClock(0, 0, false);
+    var morning = Rosary.formatClock(8, 5, false);
+    var noon = Rosary.formatClock(12, 0, false);
+    var afternoon = Rosary.formatClock(13, 30, false);
+    var night = Rosary.formatClock(23, 59, false);
+    logger.debug("0:00=" + midnight + " 8:05=" + morning + " 12:00=" + noon + " 13:30=" + afternoon + " 23:59=" + night);
+    return midnight.equals("12:00") && morning.equals("08:05") && noon.equals("12:00")
+        && afternoon.equals("01:30") && night.equals("11:59");
+}
+
+(:test)
+function splitLinesBreaksWrappedText(logger as Logger) as Boolean {
+    var two = Rosary.splitLines("1er Misterio\nGozoso");
+    var one = Rosary.splitLines("Inicio");
+    var three = Rosary.splitLines("a\nb\nc");
+    logger.debug("two=" + two + " one=" + one + " three=" + three);
+    return two.size() == 2 && two[0].equals("1er Misterio") && two[1].equals("Gozoso")
+        && one.size() == 1 && one[0].equals("Inicio")
+        && three.size() == 3 && three[2].equals("c");
+}
