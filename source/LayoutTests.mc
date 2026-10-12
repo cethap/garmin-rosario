@@ -1,6 +1,7 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Test;
+import Toybox.WatchUi;
 
 // Visible area of the Instinct 2, and checks that drawn text stays inside it. Measured from the
 // display opening in the SDK's simulator image of the watch (Devices/instinct2/instinct2.png,
@@ -140,4 +141,132 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
         }
     }
     return ok;
+}
+
+// Every text the main screen draws, for each of the 72 steps of each mystery set, stays inside the
+// visible area and clear of the subscreen ring; the Avemaría number (the only FONT_NUMBER_MILD text)
+// sits centered inside the subscreen window instead. The blocks keep their top-to-bottom order
+// without overlapping, and wrapping never cuts a title or a mystery short.
+(:test)
+function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var clockFont = WatchUi.loadResource(Rez.Fonts.PixelSmall) as FontResource;
+    var seen = {} as Dictionary<String, Boolean>;
+    var ok = true;
+    for (var set = 0; set < 4; set++) {
+        var titles = {} as Dictionary<Number, Array<String>>;
+        var mysteries = {} as Dictionary<Number, Array<String>>;
+        for (var step = 0; step < Rosary.STEP_COUNT; step++) {
+            var decade = Rosary.decadeAt(step);
+            if (!titles.hasKey(decade)) {
+                // Wrapping is slow, and both texts depend only on the decade.
+                var title = Rosary.decadeTitle(step, set as Rosary.MysterySet);
+                var mystery = Rosary.subtitle(step, set as Rosary.MysterySet);
+                titles[decade] = MainLayout.wrapTitle(title);
+                mysteries[decade] = MainLayout.wrapMystery(mystery);
+                ok = LayoutCheck.wrapsWhole(title, titles[decade] as Array<String>, 3, logger) && ok;
+                ok = LayoutCheck.wrapsWhole(mystery, mysteries[decade] as Array<String>, 2, logger) && ok;
+            }
+            var items = MainLayout.plan(step, "00:00", clockFont, titles[decade] as Array<String>,
+                mysteries[decade] as Array<String>, ScreenArea.SUBSCREEN_X, ScreenArea.SUBSCREEN_Y);
+            ok = LayoutCheck.blocksInOrder(dc, items, logger) && ok;
+            for (var i = 0; i < items.size(); i++) {
+                ok = LayoutCheck.mainItemFits(dc, items[i], seen, logger) && ok;
+            }
+        }
+    }
+    var boxes = MainLayout.boxesBounds();
+    var boxesFit = ScreenArea.visibleOnScreen([boxes[0].toFloat(), boxes[1].toFloat(), boxes[2].toFloat(), boxes[3].toFloat()] as Array<Float>,
+        ScreenArea.DISPLAY_RADIUS);
+    logger.debug((boxesFit ? "fits " : "OUT ") + "progress boxes " + boxes);
+    return ok && boxesFit;
+}
+
+// The clock fits for every time it can show, in 12h and 24h: every digit in every position.
+(:test)
+function mainScreenClockStaysInsideTheVisibleArea(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var clockFont = WatchUi.loadResource(Rez.Fonts.PixelSmall) as FontResource;
+    var seen = {} as Dictionary<String, Boolean>;
+    var minutes = [0, 11, 22, 33, 44, 55, 6, 17, 28, 39];
+    var ok = true;
+    for (var hour = 0; hour < 24; hour++) {
+        for (var m = 0; m < minutes.size(); m++) {
+            for (var mode = 0; mode < 2; mode++) {
+                var text = Rosary.formatClock(hour, minutes[m], mode == 0);
+                var items = MainLayout.plan(0, text, clockFont, ["Inicio"] as Array<String>, ["Misterios Gozosos"] as Array<String>,
+                    ScreenArea.SUBSCREEN_X, ScreenArea.SUBSCREEN_Y);
+                ok = LayoutCheck.mainItemFits(dc, items[0], seen, logger) && ok;
+            }
+        }
+    }
+    return ok;
+}
+
+(:test)
+module LayoutCheck {
+
+    // Checks one main-screen item, logging each distinct text and position once.
+    function mainItemFits(dc as Dc, item as Layout.TextItem, seen as Dictionary<String, Boolean>, logger as Logger) as Boolean {
+        var box = ScreenArea.measure(dc, item);
+        var inSubscreen = item.font == Graphics.FONT_NUMBER_MILD;
+        var fits;
+        if (inSubscreen) {
+            var centerX = (box[0] + box[2]) / 2;
+            var centerY = (box[1] + box[3]) / 2;
+            fits = ScreenArea.insideSubscreen(box)
+                && centerX == ScreenArea.SUBSCREEN_X.toFloat() && centerY == ScreenArea.SUBSCREEN_Y.toFloat();
+        } else {
+            fits = ScreenArea.visibleOnScreen(box, ScreenArea.DISPLAY_RADIUS);
+        }
+        var key = item.text + "@" + item.x + "," + item.y;
+        if (!seen.hasKey(key)) {
+            seen[key] = true;
+            logger.debug((fits ? "fits " : "OUT ") + (inSubscreen ? "subscreen " : "") + ScreenArea.describe(item.text, box));
+        }
+        return fits;
+    }
+
+    // The clock, the title, the mystery and the prayer stack top to bottom, above the progress boxes,
+    // without their boxes overlapping. Items come in that order; the subscreen number is left out.
+    function blocksInOrder(dc as Dc, items as Array<Layout.TextItem>, logger as Logger) as Boolean {
+        var bottom = 0.0;
+        var previous = "";
+        var ok = true;
+        for (var i = 0; i < items.size(); i++) {
+            var item = items[i];
+            if (item.font == Graphics.FONT_NUMBER_MILD) {
+                continue;
+            }
+            var box = ScreenArea.measure(dc, item);
+            // Lines of one wrapped block share x and step down by their pitch; only blocks are compared.
+            var sameBlock = i > 0 && items[i - 1].x == item.x && items[i - 1].font == item.font && items[i - 1].y < item.y
+                && item.font == Graphics.FONT_TINY;
+            if (!sameBlock && box[1] < bottom) {
+                logger.debug("OVERLAP '" + item.text + "' top " + box[1] + " under '" + previous + "' bottom " + bottom);
+                ok = false;
+            }
+            bottom = box[3];
+            previous = item.text;
+        }
+        var boxesTop = MainLayout.boxesBounds()[1];
+        if (bottom > boxesTop) {
+            logger.debug("OVERLAP progress boxes top " + boxesTop + " under '" + previous + "' bottom " + bottom);
+            ok = false;
+        }
+        return ok;
+    }
+
+    // Wrapping kept every word (no "..." cut) in at most maxLines lines.
+    function wrapsWhole(text as String, lines as Array<String>, maxLines as Number, logger as Logger) as Boolean {
+        var joined = "";
+        for (var i = 0; i < lines.size(); i++) {
+            joined += (i > 0 ? " " : "") + lines[i];
+        }
+        var ok = lines.size() <= maxLines && joined.equals(text);
+        if (!ok) {
+            logger.debug("CUT '" + text + "' -> " + lines);
+        }
+        return ok;
+    }
 }

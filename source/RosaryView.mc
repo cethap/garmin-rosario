@@ -4,31 +4,85 @@ import Toybox.System;
 import Toybox.Timer;
 import Toybox.WatchUi;
 
-// Layout for the Instinct 2 (176x176, round-ish, subscreen circle at the top right). Every block
-// stays inside the visible area, which narrows toward the top and the bottom. The system tiny font
-// is 23px tall (18 ascent) and about 8px per character.
-// Clock: pixel font, centered left of the subscreen, at the top.
-const CLOCK_X = 69;
-const CLOCK_Y = 4;
-// Decade title: up to 2 lines in the band left of the subscreen ("1er Misterio" is about 90px).
-const TITLE_X = 59;
-const TITLE_CENTER_Y = 38;
-const TITLE_WIDTH = 96;
-const TITLE_PITCH = 19;
-// Mystery name: up to 2 lines across the full-width band under the subscreen. Every mystery
-// fits in 2 lines at 164px.
-const MYSTERY_CENTER_Y = 92;
-const MYSTERY_WIDTH = 164;
-const MYSTERY_PITCH = 21;
-// fitTextToArea height that allows 2 lines of the tiny font (it spaces them 26px apart) but not 3.
-const TWO_LINES_HEIGHT = 52;
-// Current prayer, large, centered on this line.
-const PRAYER_Y = 129;
-// Progress boxes (opening, 5 mysteries, closing), centered on this line.
-const BOXES_Y = 155;
-const BOX_SIZE = 9;
-const BOX_GAP = 5;
-const BOX_COUNT = 7;
+// Layout of the main screen on the Instinct 2 (176x176). The visible area narrows toward the
+// corners and the subscreen lens, with its ring, takes the top right; LayoutTests.mc checks every
+// text item of every step against it. The blocks stack from the top without overlapping. The system
+// tiny font is 23px tall (18 ascent).
+module MainLayout {
+    // Clock: pixel font (60x12 for "HH:MM"), centered left of the subscreen, at the top.
+    const CLOCK_X = 69;
+    const CLOCK_Y = 6;
+    // Decade title: centered in the band left of the subscreen, under the clock. The band is about
+    // 74px wide at the top, too narrow for "1er Misterio" (90px), so titles wrap in up to 3 lines,
+    // "1er" / "Misterio" / "Gozoso", and the longer words fall on the wider rows below.
+    const TITLE_X = 59;
+    const TITLE_CENTER_Y = 48;
+    const TITLE_WIDTH = 76;
+    const TITLE_PITCH = 19;
+    // Mystery name: up to 2 lines across the full width, low enough to clear the subscreen ring.
+    // Every mystery fits in 2 lines at 164px.
+    const MYSTERY_CENTER_Y = 101;
+    const MYSTERY_WIDTH = 164;
+    const MYSTERY_PITCH = 21;
+    // fitTextToArea heights that allow 2 and 3 lines of the tiny font (it spaces them 26px apart).
+    const TWO_LINES_HEIGHT = 52;
+    const THREE_LINES_HEIGHT = 78;
+    // Current prayer, large, centered horizontally, from this top line.
+    const PRAYER_TOP = 123;
+    // Progress boxes (opening, 5 mysteries, closing), centered on this line.
+    const BOXES_Y = 160;
+    const BOX_SIZE = 9;
+    const BOX_GAP = 5;
+    const BOX_COUNT = 7;
+
+    // Word-wraps the decade title and the mystery with a system font (they have accents).
+    function wrapTitle(text as String) as Array<String> {
+        return wrap(text, TITLE_WIDTH, THREE_LINES_HEIGHT);
+    }
+
+    function wrapMystery(text as String) as Array<String> {
+        return wrap(text, MYSTERY_WIDTH, TWO_LINES_HEIGHT);
+    }
+
+    function wrap(text as String, width as Number, height as Number) as Array<String> {
+        return Rosary.splitLines(Graphics.fitTextToArea(text, Graphics.FONT_TINY, width, height, true));
+    }
+
+    // Every text the screen draws for a step: the clock, the wrapped title and mystery, the current
+    // prayer and, on an Avemaría, its number centered in the subscreen ring at (ringX, ringY).
+    function plan(step as Number, clockText as String, clockFont as Graphics.FontType, titleLines as Array<String>,
+        mysteryLines as Array<String>, ringX as Number, ringY as Number) as Array<Layout.TextItem> {
+        var centerX = Layout.SCREEN_SIZE / 2;
+        var center = Graphics.TEXT_JUSTIFY_CENTER as Number;
+        var middle = (Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER) as Number;
+        var items = [new Layout.TextItem(clockText, clockFont, CLOCK_X, CLOCK_Y, center)] as Array<Layout.TextItem>;
+        addLines(items, titleLines, TITLE_X, TITLE_CENTER_Y, TITLE_PITCH);
+        addLines(items, mysteryLines, centerX, MYSTERY_CENTER_Y, MYSTERY_PITCH);
+        items.add(new Layout.TextItem(Rosary.prayerLabel(step), Graphics.FONT_LARGE, centerX, PRAYER_TOP, center));
+        var index = Rosary.hailMaryIndex(step);
+        if (index > 0) {
+            items.add(new Layout.TextItem(index.format("%d"), Graphics.FONT_NUMBER_MILD, ringX, ringY, middle));
+        }
+        return items;
+    }
+
+    // Wrapped lines centered on (centerX, centerY), pitch px apart: tighter than the font's own line
+    // spacing, which is too loose for this screen.
+    function addLines(items as Array<Layout.TextItem>, lines as Array<String>, centerX as Number, centerY as Number,
+        pitch as Number) as Void {
+        var top = centerY - ((lines.size() - 1) * pitch + Graphics.getFontHeight(Graphics.FONT_TINY)) / 2;
+        for (var i = 0; i < lines.size(); i++) {
+            items.add(new Layout.TextItem(lines[i], Graphics.FONT_TINY, centerX, top + i * pitch, Graphics.TEXT_JUSTIFY_CENTER as Number));
+        }
+    }
+
+    // Area [left, top, right, bottom] the progress boxes cover, the current box's 2px frame included.
+    function boxesBounds() as Array<Number> {
+        var left = Layout.SCREEN_SIZE / 2 - (BOX_COUNT * BOX_SIZE + (BOX_COUNT - 1) * BOX_GAP) / 2;
+        var top = BOXES_Y - BOX_SIZE / 2;
+        return [left - 2, top - 2, left + BOX_COUNT * BOX_SIZE + (BOX_COUNT - 1) * BOX_GAP + 2, top + BOX_SIZE + 2] as Array<Number>;
+    }
+}
 
 // Main widget screen: small clock, decade title, mystery, current prayer, the Avemaría ring in
 // the subscreen and the overall progress boxes.
@@ -103,15 +157,9 @@ class RosaryView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
-    // Word-wraps the decade title and the mystery in up to 2 lines with a system font (they have
-    // accents).
     private function wrapText() as Void {
-        _titleLines = wrap(Rosary.decadeTitle(step, _set), TITLE_WIDTH);
-        _mysteryLines = wrap(Rosary.subtitle(step, _set), MYSTERY_WIDTH);
-    }
-
-    private function wrap(text as String, width as Number) as Array<String> {
-        return Rosary.splitLines(Graphics.fitTextToArea(text, Graphics.FONT_TINY, width, TWO_LINES_HEIGHT, true));
+        _titleLines = MainLayout.wrapTitle(Rosary.decadeTitle(step, _set));
+        _mysteryLines = MainLayout.wrapMystery(Rosary.subtitle(step, _set));
     }
 
     function onUpdate(dc as Dc) as Void {
@@ -119,21 +167,18 @@ class RosaryView extends WatchUi.View {
         dc.clear();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
 
+        drawRing(dc);
         var clock = System.getClockTime();
         var clockText = Rosary.formatClock(clock.hour, clock.min, System.getDeviceSettings().is24Hour);
-        dc.drawText(CLOCK_X, CLOCK_Y, _clockFont as FontResource, clockText, Graphics.TEXT_JUSTIFY_CENTER);
-
-        drawRing(dc);
-        var centerX = dc.getWidth() / 2;
-        drawLines(dc, _titleLines, TITLE_X, TITLE_CENTER_Y, TITLE_PITCH);
-        drawLines(dc, _mysteryLines, centerX, MYSTERY_CENTER_Y, MYSTERY_PITCH);
-        dc.drawText(centerX, PRAYER_Y, Graphics.FONT_LARGE, Rosary.prayerLabel(step),
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        drawProgressBoxes(dc, centerX, Rosary.decadeAt(step));
+        var items = MainLayout.plan(step, clockText, _clockFont as FontResource, _titleLines, _mysteryLines, _ringX, _ringY);
+        for (var i = 0; i < items.size(); i++) {
+            items[i].draw(dc);
+        }
+        drawProgressBoxes(dc, Rosary.decadeAt(step));
     }
 
     // 10 segments clockwise from 12 o'clock: Avemarías reached are 3px thick, the rest a 1px track.
-    // The number of the current Avemaría sits in the center; other prayers leave it blank.
+    // The plan puts the number of the current Avemaría in the center.
     private function drawRing(dc as Dc) as Void {
         var filled = Rosary.ringFill(step);
         for (var i = 0; i < Rosary.HAIL_MARYS_PER_DECADE; i++) {
@@ -141,37 +186,24 @@ class RosaryView extends WatchUi.View {
             dc.drawArc(_ringX, _ringY, _ringRadius, Graphics.ARC_CLOCKWISE, Rosary.ringSegmentStart(i), Rosary.ringSegmentEnd(i));
         }
         dc.setPenWidth(1);
-        var index = Rosary.hailMaryIndex(step);
-        if (index > 0) {
-            dc.drawText(_ringX, _ringY, Graphics.FONT_NUMBER_MILD, index.format("%d"),
-                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        }
-    }
-
-    // Draws wrapped lines centered on (centerX, centerY), pitch px apart: tighter than the font's
-    // own line spacing, which is too loose for this screen.
-    private function drawLines(dc as Dc, lines as Array<String>, centerX as Number, centerY as Number, pitch as Number) as Void {
-        var font = Graphics.FONT_TINY;
-        var top = centerY - ((lines.size() - 1) * pitch + dc.getFontHeight(font)) / 2;
-        for (var i = 0; i < lines.size(); i++) {
-            dc.drawText(centerX, top + i * pitch, font, lines[i], Graphics.TEXT_JUSTIFY_CENTER);
-        }
     }
 
     // One box per part of the rosary: filled when done, outlined when pending, and a larger
     // 2px frame for the current one.
-    private function drawProgressBoxes(dc as Dc, centerX as Number, current as Number) as Void {
-        var left = centerX - (BOX_COUNT * BOX_SIZE + (BOX_COUNT - 1) * BOX_GAP) / 2;
-        var top = BOXES_Y - BOX_SIZE / 2;
-        for (var i = 0; i < BOX_COUNT; i++) {
-            var x = left + i * (BOX_SIZE + BOX_GAP);
+    private function drawProgressBoxes(dc as Dc, current as Number) as Void {
+        var bounds = MainLayout.boxesBounds();
+        var left = bounds[0] + 2;
+        var top = bounds[1] + 2;
+        var size = MainLayout.BOX_SIZE;
+        for (var i = 0; i < MainLayout.BOX_COUNT; i++) {
+            var x = left + i * (size + MainLayout.BOX_GAP);
             if (i < current) {
-                dc.fillRectangle(x, top, BOX_SIZE, BOX_SIZE);
+                dc.fillRectangle(x, top, size, size);
             } else if (i == current) {
-                dc.drawRectangle(x - 2, top - 2, BOX_SIZE + 4, BOX_SIZE + 4);
-                dc.drawRectangle(x - 1, top - 1, BOX_SIZE + 2, BOX_SIZE + 2);
+                dc.drawRectangle(x - 2, top - 2, size + 4, size + 4);
+                dc.drawRectangle(x - 1, top - 1, size + 2, size + 2);
             } else {
-                dc.drawRectangle(x, top, BOX_SIZE, BOX_SIZE);
+                dc.drawRectangle(x, top, size, size);
             }
         }
     }
