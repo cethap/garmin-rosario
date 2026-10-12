@@ -54,6 +54,12 @@ class RosarioApp extends Application.AppBase {
     function saveProgress(position as Number, dateKey as Number) as Void {
         Storage.setValue(Rosary.PROGRESS_KEY, Rosary.encodeProgress(dateKey, position) as Array<Application.PropertyValueType>);
     }
+
+    // Forgets the saved progress, so today reads as Rosary.NOT_STARTED ("Sin empezar" in the glance).
+    // Only one value is stored, and a value of any other day already reads as not started.
+    function resetProgress() as Void {
+        Storage.deleteValue(Rosary.PROGRESS_KEY);
+    }
 }
 
 (:glance)

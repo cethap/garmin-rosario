@@ -1,6 +1,7 @@
 import Toybox.Application;
 import Toybox.Lang;
 import Toybox.Test;
+import Toybox.WatchUi;
 
 // Run No Evil unit tests for the Rosary module. They are excluded from debug and release
 // executables; run them with a unit-test build in the simulator (monkeydo <prg> instinct2 -t).
@@ -442,4 +443,50 @@ function delegateSavesEachMoveAndFinishesOnTheSalve(logger as Logger) as Boolean
         }
     }
     return ok;
+}
+
+// Holding UP asks "¿Reiniciar el rosario?". NO changes nothing. YES forgets today's progress, so the
+// glance reads "Sin empezar" again, and shows the Credo; the next move saves as usual. Uses the real
+// Storage and puts back what was there.
+(:test)
+function resetStartsTodayOverOnlyWhenConfirmed(logger as Logger) as Boolean {
+    var app = getApp();
+    var today = 20261012;
+    var before = Application.Storage.getValue(Rosary.PROGRESS_KEY);
+    var ok = false;
+    try {
+        Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
+        var view = new RosaryView(30, Rosary.JOYFUL);
+        var delegate = new RosaryDelegate(view, today);
+        delegate.onSelect();
+        var saved = app.loadProgress(today);
+        var confirmation = new ResetDelegate(delegate);
+        var answeredNo = confirmation.onResponse(WatchUi.CONFIRM_NO);
+        var kept = app.loadProgress(today);
+        var keptStep = view.step;
+        var answeredYes = confirmation.onResponse(WatchUi.CONFIRM_YES);
+        var cleared = app.loadProgress(today);
+        var clearedStep = view.step;
+        var glance = Rosary.glanceSummary(cleared);
+        delegate.onNextPage();
+        var again = app.loadProgress(today);
+        logger.debug("saved=" + saved + " kept=" + kept + " keptStep=" + keptStep + " cleared=" + cleared
+            + " clearedStep=" + clearedStep + " glance=" + glance + " again=" + again);
+        ok = answeredNo && answeredYes && saved == 31 && kept == 31 && keptStep == 31
+            && cleared == Rosary.NOT_STARTED && clearedStep == 0 && glance.equals("Sin empezar") && again == 1;
+    } finally {
+        if (before == null) {
+            Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
+        } else {
+            Application.Storage.setValue(Rosary.PROGRESS_KEY, before as Application.PropertyValueType);
+        }
+    }
+    return ok;
+}
+
+(:test)
+function resetPromptIsInSpanish(logger as Logger) as Boolean {
+    var prompt = WatchUi.loadResource(Rez.Strings.ResetPrompt) as String;
+    logger.debug("prompt=" + prompt);
+    return prompt.equals("¿Reiniciar el rosario?");
 }

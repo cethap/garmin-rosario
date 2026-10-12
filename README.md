@@ -10,6 +10,7 @@ A fast Connect IQ widget that guides the Rosary bead by bead on the Garmin Insti
 - **Subscreen ring**: 10 segments that fill as you pray the Avemarías of the decade, with the current Avemaría number in the center.
 - **Vibration**: a soft, short tap (100 ms) on each bead. When the 10 Avemarías end and the Gloria starts, three strong pulses (350 ms each, 200 ms apart, about 1.5 s in total), so you can tell it from a bead without looking. One long pulse (1 s) when you pray the Salve: press START or DOWN on the Salve to finish the Rosary.
 - **Progress saved for the day**: leave and come back and you continue where you were. A new day starts from the beginning.
+- **Start over**: hold UP on the main screen and confirm "¿Reiniciar el rosario?". YES clears today's progress (the glance reads "Sin empezar" again) and goes back to the Credo with one short pulse; NO changes nothing.
 - **Glance**: the day's mysteries and today's progress ("Gozosos" over "Sin empezar", "Inicio", "Misterio 2/5", "Salve" or "Completado"). "Completado" appears once the Salve is prayed.
 
 ## Controls
@@ -18,6 +19,7 @@ A fast Connect IQ widget that guides the Rosary bead by bead on the Garmin Insti
 |--------|--------|
 | START or DOWN | Next bead (on the Salve: finish the Rosary) |
 | UP | Previous bead |
+| Hold UP (MENU) | Start today's Rosary over, after a YES/NO confirmation |
 | BACK | Exit (progress is already saved) |
 
 From the watch face, press DOWN to reach the Rosario glance, then START to open it.
@@ -72,6 +74,7 @@ The simulator shows the glance first. Press START in the simulator to open the f
 | `source/LayoutTests.mc` | Layout tests for the glance and the main screen |
 | `source/VisibleArea.mc` | Test-only visible area of the Instinct 2, per screen row |
 | `source/RosaryView.mc` | Main screen and its layout |
-| `source/RosaryDelegate.mc` | Buttons, vibration and saving |
+| `source/RosaryDelegate.mc` | Buttons, vibration, saving and starting over |
+| `source/ResetDelegate.mc` | Answer to the start-over confirmation |
 | `source/RosaryGlanceView.mc` | Glance |
 | `source/RosarioApp.mc` | App entry point and saved progress |

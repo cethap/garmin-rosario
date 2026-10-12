@@ -3,8 +3,8 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 
 // Button input for the main widget screen: START and DOWN move to the next bead (on the Salve, they
-// pray it and finish the rosary), UP to the previous one. BACK keeps its default behavior (exit);
-// every move is already saved.
+// pray it and finish the rosary), UP to the previous one, and holding UP (MENU) offers to start the
+// day over. BACK keeps its default behavior (exit); every move is already saved.
 class RosaryDelegate extends WatchUi.BehaviorDelegate {
 
     private var _view as RosaryView;
@@ -29,6 +29,21 @@ class RosaryDelegate extends WatchUi.BehaviorDelegate {
     // UP
     function onPreviousPage() as Boolean {
         return moveTo(Rosary.prev(_view.step));
+    }
+
+    // Hold UP: asks "¿Reiniciar el rosario?"; ResetDelegate calls restart on YES.
+    function onMenu() as Boolean {
+        var prompt = WatchUi.loadResource(Rez.Strings.ResetPrompt) as String;
+        WatchUi.pushView(new WatchUi.Confirmation(prompt), new ResetDelegate(self), WatchUi.SLIDE_IMMEDIATE);
+        return true;
+    }
+
+    // Starts today's rosary over: forgets the saved progress (the glance reads "Sin empezar" again),
+    // shows the Credo and gives one short pulse. As on opening, nothing is saved until a bead moves.
+    function restart() as Void {
+        getApp().resetProgress();
+        _view.showStep(0);
+        pulse(Rosary.VIBE_SHORT);
     }
 
     // Shows, saves and vibrates a move. Presses past either end are consumed without feedback.
