@@ -38,7 +38,7 @@ monkeyc -f monkey.jungle -d instinct2 -o bin/Rosario.prg -y /path/to/developer_k
 
 ### Unit Tests
 
-The rosary logic in `source/Rosary.mc` is pure and covered by Run No Evil tests in `source/RosaryTests.mc`. `source/LayoutTests.mc` measures every text the glance and the main screen draw with the real fonts and checks it against the visible area of the Instinct 2. Tests are excluded from regular builds.
+The rosary logic in `source/Rosary.mc` is pure and covered by Run No Evil tests in `source/RosaryTests.mc`. `source/LayoutTests.mc` measures every text the glance and the main screen draw with the real fonts and checks it against the visible area of the Instinct 2, the same per-row limits the watch face was calibrated with (`source/VisibleArea.mc`). Tests are excluded from regular builds.
 
 ```sh
 monkeyc -f monkey.jungle -d instinct2 -o bin/RosarioTest.prg -y /path/to/developer_key -w -t
@@ -69,7 +69,8 @@ The simulator shows the glance first. Press START in the simulator to open the f
 | `source/Rosary.mc` | Pure rosary logic: sequence, mysteries, labels, vibration, saved progress |
 | `source/RosaryTests.mc` | Unit tests for `Rosary` and the buttons |
 | `source/Layout.mc` | Text layout of the glance, shared with the tests |
-| `source/LayoutTests.mc` | Visible area of the Instinct 2 and layout tests |
+| `source/LayoutTests.mc` | Layout tests for the glance and the main screen |
+| `source/VisibleArea.mc` | Test-only visible area of the Instinct 2, per screen row |
 | `source/RosaryView.mc` | Main screen and its layout |
 | `source/RosaryDelegate.mc` | Buttons, vibration and saving |
 | `source/RosaryGlanceView.mc` | Glance |
