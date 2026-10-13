@@ -38,8 +38,9 @@ module ReadingLayout {
         return last > 0 ? last : 0;
     }
 
-    // DOWN moves a whole window of lines on, and stops at the last window; UP moves a window back, and
-    // stops at the first line.
+    // DOWN moves a whole window of lines on, and stops at the last window, so its pages start at 0, 4,
+    // 8, ... and then at the last window (with 10 lines: 0, 4, 6). UP goes back through those same pages
+    // (6, 4, 0): to the last whole window before the current first line, and stops at the first line.
     function nextOffset(offset as Number, count as Number) as Number {
         var next = offset + visibleLines();
         var last = maxOffset(count);
@@ -47,8 +48,10 @@ module ReadingLayout {
     }
 
     function prevOffset(offset as Number) as Number {
-        var prev = offset - visibleLines();
-        return prev > 0 ? prev : 0;
+        if (offset <= 0) {
+            return 0;
+        }
+        return (offset - 1) / visibleLines() * visibleLines();
     }
 
     // The scrolling text: the mystery's name, the quote and its reference, each wrapped to the window.

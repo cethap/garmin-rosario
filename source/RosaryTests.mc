@@ -701,6 +701,42 @@ function readingScrollsBetweenBothEndsAndShowsEveryLine(logger as Logger) as Boo
     return ok;
 }
 
+// UP goes back through the very pages DOWN showed. With 10 lines DOWN shows the lines from 0, from 4 and,
+// as the last window, from 6; UP from there shows the lines from 4 and then from 0 (not from 2). For every
+// mystery DOWN stops at each whole window (0, 4, 8, ...) and then at the last window, and UP retraces
+// those pages in reverse.
+(:test)
+function readingScrollsBackThroughTheSamePages(logger as Logger) as Boolean {
+    var down = ScrollCheck.pages(0, 10, true);
+    var up = ScrollCheck.pages(down[down.size() - 1], 10, false);
+    logger.debug("10 lines: down " + down + " up " + up);
+    var ok = down.toString().equals([0, 4, 6].toString()) && up.toString().equals([6, 4, 0].toString());
+    var dc = ScreenArea.measuringDc();
+    for (var set = 0; set < 4; set++) {
+        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+            var view = new MysteryView(set as Rosary.MysterySet, decade);
+            view.onLayout(dc);
+            var delegate = new MysteryDelegate(view);
+            var count = view.bodyLines().size();
+            var shownDown = [view.offset];
+            for (var i = 0; i < count && delegate.onNextPage() && view.offset != shownDown[shownDown.size() - 1]; i++) {
+                shownDown.add(view.offset);
+            }
+            var shownUp = [view.offset];
+            for (var i = 0; i < count && delegate.onPreviousPage() && view.offset != shownUp[shownUp.size() - 1]; i++) {
+                shownUp.add(view.offset);
+            }
+            var expected = ScrollCheck.expectedPages(count);
+            var same = shownDown.toString().equals(expected.toString())
+                && shownUp.toString().equals(ScrollCheck.reversed(expected).toString());
+            logger.debug((same ? "same " : "DIFFERENT ") + Quotes.reference(Rosary.mysteryIndex(set as Rosary.MysterySet, decade))
+                + ": " + count + " lines, down " + shownDown + " up " + shownUp + " expected " + expected);
+            ok = ok && same;
+        }
+    }
+    return ok;
+}
+
 // Reading neither saves nor moves the rosary: the saved progress and the bead on the main screen stay
 // as they were while the mystery is read and scrolled. Uses the real Storage and puts back what was there.
 (:test)
@@ -758,5 +794,39 @@ module ScrollCheck {
     function screens(count as Number) as Number {
         var lines = ReadingLayout.visibleLines();
         return (count + lines - 1) / lines;
+    }
+
+    // First lines shown while pressing DOWN (or UP) from the given one over count lines, until it stops.
+    function pages(from as Number, count as Number, down as Boolean) as Array<Number> {
+        var shown = [from] as Array<Number>;
+        for (var i = 0; i < count; i++) {
+            var next = down ? ReadingLayout.nextOffset(from, count) : ReadingLayout.prevOffset(from);
+            if (next == from) {
+                break;
+            }
+            shown.add(next);
+            from = next;
+        }
+        return shown;
+    }
+
+    // The pages of count lines, top to bottom: each whole window below the last one (0, 4, 8, ...), then
+    // the last window.
+    function expectedPages(count as Number) as Array<Number> {
+        var last = ReadingLayout.maxOffset(count);
+        var pages = [] as Array<Number>;
+        for (var offset = 0; offset < last; offset += ReadingLayout.visibleLines()) {
+            pages.add(offset);
+        }
+        pages.add(last);
+        return pages;
+    }
+
+    function reversed(values as Array<Number>) as Array<Number> {
+        var result = [] as Array<Number>;
+        for (var i = values.size() - 1; i >= 0; i--) {
+            result.add(values[i]);
+        }
+        return result;
     }
 }
