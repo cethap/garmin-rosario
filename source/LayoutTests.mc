@@ -223,7 +223,7 @@ function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
                 ok = LayoutCheck.wrapsWhole(mystery, mysteries[decade] as Array<String>, 2, logger) && ok;
             }
             var items = MainLayout.plan(step, "00:00", clockFont, titles[decade] as Array<String>,
-                mysteries[decade] as Array<String>, ring[0], ring[1]);
+                mysteries[decade] as Array<String>, Rosary.prayerLabel(step), ring[0], ring[1]);
             ok = LayoutCheck.blocksInOrder(dc, items, logger) && ok;
             for (var i = 0; i < items.size(); i++) {
                 ok = LayoutCheck.mainItemFits(dc, items[i], seen, logger) && ok;
@@ -245,13 +245,16 @@ function mainScreenClockStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var ring = MainLayout.ring();
     var seen = {} as Dictionary<String, Boolean>;
     var minutes = [0, 11, 22, 33, 44, 55, 6, 17, 28, 39];
+    // The screen on the Credo, around the clock.
+    var title = MainLayout.wrapTitle(Rosary.decadeTitle(0, Rosary.JOYFUL));
+    var mystery = MainLayout.wrapMystery(Rosary.subtitle(0, Rosary.JOYFUL));
+    var prayer = Rosary.prayerLabel(0);
     var ok = true;
     for (var hour = 0; hour < 24; hour++) {
         for (var m = 0; m < minutes.size(); m++) {
             for (var mode = 0; mode < 2; mode++) {
                 var text = Rosary.formatClock(hour, minutes[m], mode == 0);
-                var items = MainLayout.plan(0, text, clockFont, ["Inicio"] as Array<String>, ["Misterios Gozosos"] as Array<String>,
-                    ring[0], ring[1]);
+                var items = MainLayout.plan(0, text, clockFont, title, mystery, prayer, ring[0], ring[1]);
                 ok = LayoutCheck.mainItemFits(dc, items[0], seen, logger) && ok;
             }
         }
@@ -305,7 +308,8 @@ function readingFontHasEveryGlyph(logger as Logger) as Boolean {
     var checked = {} as Dictionary<String, Number>;
     var ok = true;
     for (var index = 0; index < Rosary.DECADES * 4; index++) {
-        var texts = [Quotes.text(index), Quotes.reference(index), Rosary.MYSTERIES[index]] as Array<String>;
+        var name = Rosary.mysteryName((index / Rosary.DECADES) as Rosary.MysterySet, index % Rosary.DECADES + 1);
+        var texts = [Quotes.text(index), Quotes.reference(index), name] as Array<String>;
         for (var t = 0; t < texts.size(); t++) {
             var chars = texts[t].toCharArray();
             for (var c = 0; c < chars.size(); c++) {

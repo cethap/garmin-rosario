@@ -68,16 +68,17 @@ module MainLayout {
     }
 
     // Every text the screen draws for a step: the clock, the wrapped title and mystery, the current
-    // prayer and, on an Avemaría, its number centered in the subscreen ring at (ringX, ringY).
+    // prayer (Rosary.prayerLabel) and, on an Avemaría, its number centered in the subscreen ring at
+    // (ringX, ringY).
     function plan(step as Number, clockText as String, clockFont as Graphics.FontType, titleLines as Array<String>,
-        mysteryLines as Array<String>, ringX as Number, ringY as Number) as Array<Layout.TextItem> {
+        mysteryLines as Array<String>, prayer as String, ringX as Number, ringY as Number) as Array<Layout.TextItem> {
         var centerX = Layout.SCREEN_SIZE / 2;
         var center = Graphics.TEXT_JUSTIFY_CENTER as Number;
         var middle = (Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER) as Number;
         var items = [new Layout.TextItem(clockText, clockFont, CLOCK_X, CLOCK_Y, center)] as Array<Layout.TextItem>;
         addLines(items, titleLines, TITLE_X, TITLE_CENTER_Y, TITLE_PITCH);
         addLines(items, mysteryLines, centerX, MYSTERY_CENTER_Y, MYSTERY_PITCH);
-        items.add(new Layout.TextItem(Rosary.prayerLabel(step), Graphics.FONT_LARGE, centerX, PRAYER_TOP, center));
+        items.add(new Layout.TextItem(prayer, Graphics.FONT_LARGE, centerX, PRAYER_TOP, center));
         var index = Rosary.hailMaryIndex(step);
         if (index > 0) {
             items.add(new Layout.TextItem(index.format("%d"), Graphics.FONT_NUMBER_MILD, ringX, ringY, middle));
@@ -115,10 +116,11 @@ class RosaryView extends WatchUi.View {
     private var _ringY as Number;
     private var _ringRadius as Number;
     private var _clockTimer as Timer.Timer?;
-    // Wrapped text for the current step, rebuilt only when the step changes (wrapping is the
-    // costliest part of a render, and the clock redraws every minute).
+    // Text for the current step, loaded from the resources and wrapped only when the step changes
+    // (loading and wrapping are the costliest part of a render, and the clock redraws every minute).
     private var _titleLines as Array<String>;
     private var _mysteryLines as Array<String>;
+    private var _prayer as String;
 
     function initialize(step as Number, set as Rosary.MysterySet) {
         View.initialize();
@@ -130,6 +132,7 @@ class RosaryView extends WatchUi.View {
         _ringRadius = MainLayout.RING_RADIUS;
         _titleLines = [] as Array<String>;
         _mysteryLines = [] as Array<String>;
+        _prayer = "";
     }
 
     function onLayout(dc as Dc) as Void {
@@ -138,7 +141,7 @@ class RosaryView extends WatchUi.View {
         _ringX = ring[0];
         _ringY = ring[1];
         _ringRadius = ring[2];
-        wrapText();
+        loadStepText();
     }
 
     // Keep the clock current while the screen is open.
@@ -169,13 +172,14 @@ class RosaryView extends WatchUi.View {
 
     function showStep(newStep as Number) as Void {
         step = newStep;
-        wrapText();
+        loadStepText();
         WatchUi.requestUpdate();
     }
 
-    private function wrapText() as Void {
+    private function loadStepText() as Void {
         _titleLines = MainLayout.wrapTitle(Rosary.decadeTitle(step, mysterySet));
         _mysteryLines = MainLayout.wrapMystery(Rosary.subtitle(step, mysterySet));
+        _prayer = Rosary.prayerLabel(step);
     }
 
     function onUpdate(dc as Dc) as Void {
@@ -186,7 +190,8 @@ class RosaryView extends WatchUi.View {
         drawRing(dc);
         var clock = System.getClockTime();
         var clockText = Rosary.formatClock(clock.hour, clock.min, System.getDeviceSettings().is24Hour);
-        var items = MainLayout.plan(step, clockText, _clockFont as FontResource, _titleLines, _mysteryLines, _ringX, _ringY);
+        var items = MainLayout.plan(step, clockText, _clockFont as FontResource, _titleLines, _mysteryLines, _prayer,
+            _ringX, _ringY);
         for (var i = 0; i < items.size(); i++) {
             items[i].draw(dc);
         }

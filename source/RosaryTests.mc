@@ -5,6 +5,8 @@ import Toybox.WatchUi;
 
 // Run No Evil unit tests for the Rosary module. They are excluded from debug and release
 // executables; run them with a unit-test build in the simulator (monkeydo <prg> instinct2 -t).
+// A test about a text itself (a label, a title, a name) pins the Spanish text; a test where a text only
+// shows which item is on screen compares it with its string resource (Rosary.loadText).
 
 (:test)
 function sequenceHasSeventyTwoStepsEndingInSalve(logger as Logger) as Boolean {
@@ -492,7 +494,8 @@ function resetStartsTodayOverOnlyWhenConfirmed(logger as Logger) as Boolean {
         logger.debug("saved=" + saved + " kept=" + kept + " keptStep=" + keptStep + " cleared=" + cleared
             + " clearedStep=" + clearedStep + " glance=" + glance + " again=" + again);
         ok = answeredNo && answeredYes && saved == 31 && kept == 31 && keptStep == 31
-            && cleared == Rosary.NOT_STARTED && clearedStep == 0 && glance.equals("Sin empezar") && again == 1;
+            && cleared == Rosary.NOT_STARTED && clearedStep == 0 && glance.equals(Rosary.loadText(Rez.Strings.GlanceNotStarted))
+            && again == 1;
     } finally {
         if (before == null) {
             Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
@@ -539,7 +542,8 @@ function menuOffersReadingTheMysteryAndRestarting(logger as Logger) as Boolean {
     var labels = opening.labels();
     logger.debug("labels=" + labels + " selected=" + opening.selected + " id=" + opening.selectedId()
         + " titles=" + opening.titleLines() + " | " + second.title() + " | " + salve.title());
-    return labels.size() == MenuLayout.ITEM_COUNT && labels[0].equals("Leer misterio") && labels[1].equals("Reiniciar")
+    return labels.size() == MenuLayout.ITEM_COUNT && labels[0].equals(Rosary.loadText(Rez.Strings.MenuRead))
+        && labels[1].equals(Rosary.loadText(Rez.Strings.MenuReset))
         && opening.selected == 0 && opening.selectedId() == :read
         && opening.title().equals("1er Misterio Gozoso") && opening.titleLines().toString().equals(["1er", "Misterio", "Gozoso"].toString())
         && second.title().equals("2do Misterio Glorioso") && salve.title().equals("5to Misterio Doloroso");
@@ -586,8 +590,10 @@ function menuSelectOpensTheChosenItemOverTheRosary(logger as Logger) as Boolean 
     var reading = MenuFake.select(rosaryView, 0);
     var restarting = MenuFake.select(rosaryView, 1);
     logger.debug("read: " + reading + " restart: " + restarting + " step=" + rosaryView.step);
-    return reading.toString().equals([true, "Leer misterio", ["close", "read"]].toString())
-        && restarting.toString().equals([true, "Reiniciar", ["close", "restart"]].toString())
+    var read = Rosary.loadText(Rez.Strings.MenuRead);
+    var reset = Rosary.loadText(Rez.Strings.MenuReset);
+    return reading.toString().equals([true, read, ["close", "read"]].toString())
+        && restarting.toString().equals([true, reset, ["close", "restart"]].toString())
         && rosaryView.step == 31;
 }
 
@@ -759,8 +765,9 @@ function readingLeavesTheProgressAndTheBeadAlone(logger as Logger) as Boolean {
         reading.onMenu();
         var after = app.loadProgress(today);
         logger.debug("saved=" + saved + " after=" + after + " step=" + rosary.step + " title=" + view.titleLines());
-        ok = saved == 31 && after == 31 && rosary.step == 31 && view.titleLines().size() == 3
-            && view.titleLines()[0].equals("2do") && view.bodyLines()[0].equals("La Visitación de");
+        ok = saved == 31 && after == 31 && rosary.step == 31
+            && view.titleLines().toString().equals(MainLayout.wrapTitle(Rosary.mysteryTitle(Rosary.JOYFUL, 2)).toString())
+            && Rosary.mysteryName(Rosary.JOYFUL, 2).find(view.bodyLines()[0]) == 0;
     } finally {
         if (before == null) {
             Application.Storage.deleteValue(Rosary.PROGRESS_KEY);

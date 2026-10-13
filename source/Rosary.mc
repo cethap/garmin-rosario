@@ -1,6 +1,9 @@
 import Toybox.Lang;
+import Toybox.WatchUi;
 
-// Pure, device-independent rosary logic shared by the widget, the glance and the unit tests.
+// Rosary logic shared by the widget, the glance and the unit tests. It is pure and device-independent,
+// except for the texts, which come from the string resources (see "Text" below). The labels only the
+// full-screen widget shows continue this module in RosaryLabels.mc, outside the glance.
 //
 // The Rosary is a sequence of 72 steps (beads), indexed 0..71:
 //   0..5    opening: Credo, Padre Nuestro, 3 Avemarías, Gloria
@@ -49,43 +52,6 @@ module Rosary {
     const CLOSING_DECADE = 6;
     const HAIL_MARYS_PER_DECADE = 10;
     const OPENING_HAIL_MARYS = 3;
-
-    // Indexed by Prayer.
-    const PRAYER_NAMES = ["Credo", "Padre Nuestro", "Avemaría", "Gloria", "Oh Jesús mío", "Salve"];
-
-    // Indexed by MysterySet.
-    const SET_PLURAL = ["Gozosos", "Dolorosos", "Gloriosos", "Luminosos"];
-    const SET_SINGULAR = ["Gozoso", "Doloroso", "Glorioso", "Luminoso"];
-
-    // Indexed by decade - 1.
-    const ORDINALS = ["1er", "2do", "3er", "4to", "5to"];
-
-    // Five mysteries per set, in MysterySet order.
-    const MYSTERIES = [
-        "La Anunciación del Ángel a María",
-        "La Visitación de María a su prima Isabel",
-        "El Nacimiento de Jesús en Belén",
-        "La Presentación de Jesús en el Templo",
-        "El Niño Jesús perdido y hallado en el Templo",
-
-        "La Oración de Jesús en el Huerto",
-        "La Flagelación del Señor",
-        "La Coronación de espinas",
-        "Jesús con la Cruz a cuestas",
-        "La Crucifixión y Muerte de Jesús",
-
-        "La Resurrección del Señor",
-        "La Ascensión del Señor a los Cielos",
-        "La Venida del Espíritu Santo",
-        "La Asunción de María a los Cielos",
-        "La Coronación de María como Reina",
-
-        "El Bautismo de Jesús en el Jordán",
-        "Las Bodas de Caná",
-        "El Anuncio del Reino de Dios",
-        "La Transfiguración del Señor",
-        "La Institución de la Eucaristía"
-    ];
 
     // --- Navigation ---
 
@@ -214,31 +180,17 @@ module Rosary {
         return GLORIOUS;
     }
 
+    // "Gozosos": the set's name as the glance and "Misterios Gozosos" use it. Glance-scoped.
     function setNamePlural(set as MysterySet) as String {
-        return SET_PLURAL[set as Number];
+        var ids = [Rez.Strings.SetPluralJoyful, Rez.Strings.SetPluralSorrowful, Rez.Strings.SetPluralGlorious,
+            Rez.Strings.SetPluralLuminous] as Array<ResourceId>;
+        return loadText(ids[set as Number]);
     }
 
-    function setNameSingular(set as MysterySet) as String {
-        return SET_SINGULAR[set as Number];
-    }
-
-    // Name of mystery 1..5 of a set; "" for the opening (0) and the closing (6).
-    function mysteryName(set as MysterySet, decade as Number) as String {
-        if (decade < 1 || decade > DECADES) {
-            return "";
-        }
-        return MYSTERIES[mysteryIndex(set, decade)];
-    }
-
-    // Index 0..19 of mystery 1..5 of a set, in MysterySet order: the order of MYSTERIES and of the
-    // Bible quotes in resources/strings/quotes.xml.
+    // Index 0..19 of mystery 1..5 of a set, in MysterySet order. Resource N = index + 1 holds the mystery's
+    // name (MysteryN, resources/strings/mysteries.xml) and its Bible quote (QuoteN and RefN, quotes.xml).
     function mysteryIndex(set as MysterySet, decade as Number) as Number {
         return (set as Number) * DECADES + decade - 1;
-    }
-
-    // "1er Misterio Gozoso" .. "5to Misterio Luminoso" for mystery 1..5 of a set.
-    function mysteryTitle(set as MysterySet, decade as Number) as String {
-        return ORDINALS[decade - 1] + " Misterio " + setNameSingular(set);
     }
 
     // Mystery (1..5) to read at a position: the current one in a decade; the first, the one coming
@@ -254,40 +206,20 @@ module Rosary {
         return decade > DECADES ? DECADES : decade;
     }
 
-    // --- Labels ---
+    // --- Text ---
+    //
+    // Every text the app shows is a string resource (resources/strings), so it follows the device's
+    // language. A text made of parts is a template whose $1$, $2$ Lang.format fills in, so each language
+    // can order its words. Views load a text once and keep it, never on every frame.
+    //
+    // The glance has only the strings marked scope="glance": the set names in plural, the glance summaries
+    // and the Salve. Looking up any other one there crashes with "Symbol Not Found", and the compiler does
+    // not warn. So this file, which the glance loads, looks up only those; each lookup table is built inside
+    // its function (a module constant would be built in the glance too); and the other labels live in
+    // RosaryLabels.mc, outside the glance.
 
-    function prayerName(prayer as Prayer) as String {
-        return PRAYER_NAMES[prayer as Number];
-    }
-
-    // The bead being prayed, for example "Avemaría 7", "Padre Nuestro" or "Oh Jesús mío".
-    function prayerLabel(step as Number) as String {
-        var index = hailMaryIndex(step);
-        if (index > 0) {
-            return PRAYER_NAMES[HAIL_MARY as Number] + " " + index.format("%d");
-        }
-        return prayerName(prayerAt(step));
-    }
-
-    // "1er Misterio Gozoso" .. "5to Misterio Luminoso"; "Inicio" for the opening, "Final" for the Salve.
-    function decadeTitle(step as Number, set as MysterySet) as String {
-        var decade = decadeAt(step);
-        if (decade == 0) {
-            return "Inicio";
-        }
-        if (decade == CLOSING_DECADE) {
-            return "Final";
-        }
-        return mysteryTitle(set, decade);
-    }
-
-    // Line under the title: the current mystery, or the day's set at the opening and the Salve.
-    function subtitle(step as Number, set as MysterySet) as String {
-        var decade = decadeAt(step);
-        if (decade >= 1 && decade <= DECADES) {
-            return mysteryName(set, decade);
-        }
-        return "Misterios " + setNamePlural(set);
+    function loadText(id as ResourceId) as String {
+        return WatchUi.loadResource(id) as String;
     }
 
     // --- Feedback ---
@@ -337,23 +269,23 @@ module Rosary {
     }
 
     // Today's progress from the saved position: "Sin empezar" (NOT_STARTED), "En progreso" (opening, also
-    // a day moved back to the Credo; "Inicio" read as not started), "Misterio 2/5", "Salve" until it is
-    // prayed, "Completado" (DONE).
+    // a day moved back to the Credo; "Inicio" read as not started), "Misterio 2/5" (the GlanceMystery
+    // template), "Salve" until it is prayed, "Completado" (DONE). Only glance-scoped strings.
     function glanceSummary(position as Number) as String {
         if (position < 0) {
-            return "Sin empezar";
+            return loadText(Rez.Strings.GlanceNotStarted);
         }
         if (position >= DONE) {
-            return "Completado";
+            return loadText(Rez.Strings.GlanceDone);
         }
         if (position == LAST_STEP) {
-            return prayerName(SALVE);
+            return loadText(Rez.Strings.PrayerSalve);
         }
         var decade = decadeAt(position);
         if (decade == 0) {
-            return "En progreso";
+            return loadText(Rez.Strings.GlanceInProgress);
         }
-        return "Misterio " + decade.format("%d") + "/" + DECADES.format("%d");
+        return Lang.format(loadText(Rez.Strings.GlanceMystery), [decade, DECADES]);
     }
 
     // --- Persistence ---
