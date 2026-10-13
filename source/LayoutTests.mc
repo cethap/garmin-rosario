@@ -16,9 +16,15 @@ module ScreenArea {
     const SUBSCREEN_Y = 31;
     const SUBSCREEN_RADIUS = 31;
     const MARGIN = 2;
-    // Screen position and width of the glance content area in the selected slot (simulator.json).
+    // Screen position and width of the glance content area (164x62) in the selected slot of the glance
+    // loop. On the watch the selected glance is the lower band, with the selection bar on its left. Measured
+    // from the user's photo of the Instinct 2 (about 4.66 photo px per screen px; the subscreen circle lands
+    // at about (140,30), consistent with (144,31)): the bar spans screen rows 74..136, the 62px content
+    // height, and "Gozosos" starts at screen x 17 to 18, the content's x 9 plus Layout.GLANCE_LEFT. The band
+    // above it, beside the lens (at 9,19 in the simulator), shows the previous glance unselected; text there
+    // may run under the lens, which the user accepts, so it is not checked.
     const GLANCE_X = 9;
-    const GLANCE_Y = 19;
+    const GLANCE_Y = 74;
     const GLANCE_WIDTH = 164;
     function measuringDc() as Dc {
         return new Graphics.BufferedBitmap({:width => SIZE, :height => SIZE}).getDc();
@@ -99,8 +105,9 @@ function geometryChecksCornersAndClosestPoints(logger as Logger) as Boolean {
         && right[0] == 20.0 && right[1] == 40.0 && right[2] == 50.0 && right[3] == 63.0;
 }
 
-// Every label the glance shows, for each mystery set, stays inside the selected glance slot and the
-// visible area with the 2px margin: off the round edge and clear of the subscreen lens.
+// Every label the glance shows, for each mystery set, lies inside the glance's 164x62 content area and,
+// in the selected slot measured on the watch (ScreenArea.GLANCE_Y), inside the visible area with the 2px
+// margin. Both lines use the medium font.
 (:test)
 function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
@@ -109,6 +116,7 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     for (var set = 0; set < 4; set++) {
         for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
             var items = Layout.glancePlan(set as Rosary.MysterySet, position, Layout.GLANCE_HEIGHT);
+            ok = ok && items.size() == 2;
             for (var i = 0; i < items.size(); i++) {
                 var item = items[i];
                 var key = item.text + "@" + item.x + "," + item.y;
@@ -118,9 +126,12 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
                 seen[key] = true;
                 var box = ScreenArea.measure(dc, item);
                 var screen = ScreenArea.offset(box, ScreenArea.GLANCE_X, ScreenArea.GLANCE_Y);
-                var fits = ScreenArea.boxInRect(box, 0, 0, ScreenArea.GLANCE_WIDTH, Layout.GLANCE_HEIGHT)
+                var fits = item.font == Graphics.FONT_MEDIUM
+                    && ScreenArea.boxInRect(box, 0, 0, ScreenArea.GLANCE_WIDTH, Layout.GLANCE_HEIGHT)
                     && ScreenArea.visible(screen);
-                logger.debug((fits ? "fits " : "OUT ") + ScreenArea.describeVisible(item.text, screen));
+                logger.debug((fits ? "fits " : "OUT ") + Graphics.getFontHeight(item.font) + "px "
+                    + ScreenArea.describeVisible(item.text, screen) + ", " + (ScreenArea.GLANCE_WIDTH - box[2]).format("%.0f")
+                    + "px to the content's right edge");
                 ok = ok && fits;
             }
         }
@@ -128,56 +139,41 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     return ok;
 }
 
-// The two glance lines read as one block: the status stays at the bottom of the slot (dc y 39) and the
-// set name sits right above it, 19 to 21px between the line tops, both tiny at the shared indent.
+// The two glance lines read as one block, vertically centered in the 62px slot: the set name over the
+// status, both in the medium font at the shared left x, the status's box starting where the set name's
+// ends (touching, never overlapping), with the same room above the block as below it (1px apart at most).
 (:test)
 function glanceLinesReadAsOneBlock(logger as Logger) as Boolean {
-    var ok = true;
-    var bottom = Layout.GLANCE_HEIGHT - Graphics.getFontHeight(Graphics.FONT_TINY);
-    for (var set = 0; set < 4; set++) {
-        var items = Layout.glancePlan(set as Rosary.MysterySet, 20, Layout.GLANCE_HEIGHT);
-        var pitch = items[1].y - items[0].y;
-        logger.debug(items[0].text + " at dc y " + items[0].y + ", " + items[1].text + " at dc y " + items[1].y + ", pitch " + pitch);
-        ok = ok && items.size() == 2 && items[1].y == 39 && bottom == 39 && pitch >= 19 && pitch <= 21
-            && items[0].x == Layout.GLANCE_LEFT && items[1].x == Layout.GLANCE_LEFT
-            && items[0].font == Graphics.FONT_TINY && items[1].font == Graphics.FONT_TINY;
-    }
-    return ok;
-}
-
-// The tiny font is the largest system font that fits the glance beside the subscreen lens: drawn at
-// the same places with the small or the medium font, some set name or status leaves the visible area.
-(:test)
-function glanceLargerFontsDoNotFit(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
-    var fonts = [Graphics.FONT_SMALL, Graphics.FONT_MEDIUM];
-    var names = ["small", "medium"];
+    var font = Graphics.FONT_MEDIUM;
+    var line = Graphics.getFontHeight(font);
     var ok = true;
-    for (var f = 0; f < fonts.size(); f++) {
-        var font = fonts[f] as Graphics.FontType;
-        var out = 0;
-        var worst = "";
-        var seen = {} as Dictionary<String, Boolean>;
-        for (var set = 0; set < 4; set++) {
-            for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
-                var items = Layout.glancePlan(set as Rosary.MysterySet, position, Layout.GLANCE_HEIGHT);
-                for (var i = 0; i < items.size(); i++) {
-                    var y = i == 0 ? items[0].y : Layout.GLANCE_HEIGHT - Graphics.getFontHeight(font);
-                    var item = new Layout.TextItem(items[i].text, font, items[i].x, y, items[i].justify);
-                    if (seen.hasKey(item.text)) {
-                        continue;
-                    }
-                    seen[item.text] = true;
-                    var screen = ScreenArea.offset(ScreenArea.measure(dc, item), ScreenArea.GLANCE_X, ScreenArea.GLANCE_Y);
-                    if (!ScreenArea.visible(screen)) {
-                        out++;
-                        worst += " " + ScreenArea.describeVisible(item.text, screen);
-                    }
-                }
+    var seen = {} as Dictionary<String, Boolean>;
+    for (var set = 0; set < 4; set++) {
+        for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
+            var items = Layout.glancePlan(set as Rosary.MysterySet, position, Layout.GLANCE_HEIGHT);
+            var key = items[0].text + "|" + items[1].text;
+            if (seen.hasKey(key)) {
+                continue;
             }
+            seen[key] = true;
+            var title = ScreenArea.measure(dc, items[0]);
+            var status = ScreenArea.measure(dc, items[1]);
+            var gap = status[1] - title[3];
+            var above = title[1];
+            var below = Layout.GLANCE_HEIGHT - status[3];
+            var spread = above - below;
+            var block = items.size() == 2 && items[0].font == font && items[1].font == font
+                && items[0].x == Layout.GLANCE_LEFT && items[1].x == Layout.GLANCE_LEFT && Layout.GLANCE_LEFT == 9
+                && items[1].y - items[0].y == line && gap == 0 && above >= 0 && below >= 0 && spread >= -1 && spread <= 1;
+            if (!block || position == Rosary.NOT_STARTED) {
+                logger.debug((block ? "block " : "APART ") + ScreenArea.describe(items[0].text, title) + " over "
+                    + ScreenArea.describe(items[1].text, status) + " gap " + gap.format("%.0f") + ", "
+                    + above.format("%.0f") + "px above, " + below.format("%.0f") + "px below; medium " + line + "px (ascent "
+                    + Graphics.getFontAscent(font) + ", descent " + Graphics.getFontDescent(font) + ")");
+            }
+            ok = ok && block;
         }
-        logger.debug(names[f] + " font (" + Graphics.getFontHeight(font) + "px): " + out + " of " + seen.size() + " labels out:" + worst);
-        ok = ok && out > 0;
     }
     return ok;
 }

@@ -8,15 +8,14 @@ module Layout {
 
     // Instinct 2 screen: 176x176.
     const SCREEN_SIZE = 176;
-    // Height of the glance content area in the selected slot of the glance loop (164x62 at 9,19).
+    // Height of the glance content area (164x62; on the watch the selected glance sits at screen 9,74).
     const GLANCE_HEIGHT = 62;
-    // Glance text: two tiny lines sharing a left indent, read as one block: the progress at the bottom of
-    // the slot and the set name right above it, GLANCE_PITCH px between the line tops (no set name has a
-    // descender, so the lines do not touch). The indent is the one that fits the selected slot: the
-    // subscreen lens ring bounds the set name on the right and the round edge both lines on the left
-    // (see LayoutTests.mc for the measured limits). The tiny font is the largest system font that fits.
+    // Glance text: two lines in the medium font sharing a left indent, read as one block vertically
+    // centered in the slot: the set name over the progress, the progress's box starting where the set
+    // name's ends (no set name has a descender, so the lines do not touch). The medium font is the system
+    // font closest to the other apps' glances on the watch (bold caps of about 15px, about 25px between
+    // baselines); in the tiny font (caps of about 10px) the glance looked much smaller than them.
     const GLANCE_LEFT = 9;
-    const GLANCE_PITCH = 19;
 
     // One piece of text a view draws, with the arguments Dc.drawText takes.
     class TextItem {
@@ -39,14 +38,16 @@ module Layout {
         }
     }
 
-    // Glance: today's progress at the bottom of a slot of the given height, the day's mysteries right above it.
+    // Glance: the day's mysteries over today's progress, one block vertically centered in a slot of the
+    // given height.
     function glancePlan(set as Rosary.MysterySet, step as Number, height as Number) as Array<TextItem> {
-        var font = Graphics.FONT_TINY;
+        var font = Graphics.FONT_MEDIUM;
         var justify = Graphics.TEXT_JUSTIFY_LEFT as Number;
-        var bottom = height - Graphics.getFontHeight(font);
+        var line = Graphics.getFontHeight(font);
+        var top = (height - 2 * line) / 2;
         return [
-            new TextItem(Rosary.glanceTitle(set), font, GLANCE_LEFT, bottom - GLANCE_PITCH, justify),
-            new TextItem(Rosary.glanceSummary(step), font, GLANCE_LEFT, bottom, justify)
+            new TextItem(Rosary.glanceTitle(set), font, GLANCE_LEFT, top, justify),
+            new TextItem(Rosary.glanceSummary(step), font, GLANCE_LEFT, top + line, justify)
         ] as Array<TextItem>;
     }
 
