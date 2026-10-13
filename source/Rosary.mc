@@ -227,7 +227,31 @@ module Rosary {
         if (decade < 1 || decade > DECADES) {
             return "";
         }
-        return MYSTERIES[(set as Number) * DECADES + decade - 1];
+        return MYSTERIES[mysteryIndex(set, decade)];
+    }
+
+    // Index 0..19 of mystery 1..5 of a set, in MysterySet order: the order of MYSTERIES and of the
+    // Bible quotes in resources/strings/quotes.xml.
+    function mysteryIndex(set as MysterySet, decade as Number) as Number {
+        return (set as Number) * DECADES + decade - 1;
+    }
+
+    // "1er Misterio Gozoso" .. "5to Misterio Luminoso" for mystery 1..5 of a set.
+    function mysteryTitle(set as MysterySet, decade as Number) as String {
+        return ORDINALS[decade - 1] + " Misterio " + setNameSingular(set);
+    }
+
+    // Mystery (1..5) to read at a position: the current one in a decade; the first, the one coming
+    // next, during the opening; the fifth on the Salve and once the rosary is done.
+    function readingDecade(position as Number) as Number {
+        if (position >= DONE) {
+            return DECADES;
+        }
+        var decade = decadeAt(position);
+        if (decade < 1) {
+            return 1;
+        }
+        return decade > DECADES ? DECADES : decade;
     }
 
     // --- Labels ---
@@ -254,7 +278,7 @@ module Rosary {
         if (decade == CLOSING_DECADE) {
             return "Final";
         }
-        return ORDINALS[decade - 1] + " Misterio " + setNameSingular(set);
+        return mysteryTitle(set, decade);
     }
 
     // Line under the title: the current mystery, or the day's set at the opening and the Salve.

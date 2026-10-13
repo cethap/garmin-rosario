@@ -1,7 +1,7 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// Answer to "¿Reiniciar el rosario?", asked when UP is held on the main screen: YES starts today's
+// Answer to "¿Reiniciar el rosario?", asked from "Reiniciar" in the hold-UP menu: YES starts today's
 // rosary over, NO leaves everything as it was. The system closes the confirmation either way.
 class ResetDelegate extends WatchUi.ConfirmationDelegate {
 

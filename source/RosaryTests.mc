@@ -509,3 +509,172 @@ function resetPromptIsInSpanish(logger as Logger) as Boolean {
     logger.debug("prompt=" + prompt);
     return prompt.equals("¿Reiniciar el rosario?");
 }
+
+// "Leer el misterio" reads the current mystery: the first, the one coming next, during the opening;
+// mystery n during decade n; the fifth on the Salve and once the rosary is done.
+(:test)
+function readingFollowsTheCurrentMystery(logger as Logger) as Boolean {
+    var positions = [0, 5, 6, 18, 19, 44, 57, 58, 70, 71, Rosary.DONE];
+    var actual = [];
+    for (var i = 0; i < positions.size(); i++) {
+        actual.add(Rosary.readingDecade(positions[i]));
+    }
+    var first = Rosary.mysteryTitle(Rosary.JOYFUL, 1);
+    var third = Rosary.mysteryTitle(Rosary.SORROWFUL, 3);
+    var fifth = Rosary.mysteryTitle(Rosary.LUMINOUS, 5);
+    logger.debug("decades=" + actual + " titles=" + first + " | " + third + " | " + fifth);
+    return actual.toString().equals([1, 1, 1, 1, 2, 3, 4, 5, 5, 5, 5].toString())
+        && first.equals("1er Misterio Gozoso") && third.equals("3er Misterio Doloroso") && fifth.equals("5to Misterio Luminoso")
+        && first.equals(Rosary.decadeTitle(6, Rosary.JOYFUL));
+}
+
+// Hold UP opens a menu: "Leer el misterio", with the title of the mystery it opens as sublabel, and
+// "Reiniciar".
+(:test)
+function menuOffersReadingTheMysteryAndRestarting(logger as Logger) as Boolean {
+    var opening = RosaryMenu.build(0, Rosary.JOYFUL);
+    var read = opening.getItem(0);
+    var reset = opening.getItem(1);
+    var second = RosaryMenu.build(20, Rosary.GLORIOUS).getItem(0);
+    var salve = RosaryMenu.build(Rosary.LAST_STEP, Rosary.SORROWFUL).getItem(0);
+    if (read == null || reset == null || second == null || salve == null) {
+        logger.debug("missing menu item");
+        return false;
+    }
+    logger.debug("read=" + read.getLabel() + " / " + read.getSubLabel() + " id=" + read.getId()
+        + " reset=" + reset.getLabel() + " / " + reset.getSubLabel() + " id=" + reset.getId()
+        + " second=" + second.getSubLabel() + " salve=" + salve.getSubLabel());
+    return read.getLabel().equals("Leer el misterio") && "1er Misterio Gozoso".equals(read.getSubLabel()) && read.getId() == :read
+        && reset.getLabel().equals("Reiniciar") && reset.getSubLabel() == null && reset.getId() == :reset
+        && "2do Misterio Glorioso".equals(second.getSubLabel()) && "5to Misterio Doloroso".equals(salve.getSubLabel());
+}
+
+// Each of the 20 mysteries has its own quote, loaded from the resources with its reference, in
+// Rosary.mysteryIndex order. The first and the last are pinned word for word.
+(:test)
+function everyMysteryHasItsBibleQuote(logger as Logger) as Boolean {
+    var expected = ["Lc 1, 28", "Lc 1, 42", "Lc 2, 7", "Lc 2, 30-31", "Lc 2, 49",
+        "Lc 22, 42", "Jn 19, 1", "Jn 19, 2", "Jn 19, 17", "Lc 23, 46",
+        "Lc 24, 5-6", "Hch 1, 9", "Hch 2, 4", "Lc 1, 48", "Ap 12, 1",
+        "Mt 3, 17", "Jn 2, 5", "Mc 1, 15", "Mc 9, 7", "Lc 22, 19"];
+    var refs = "";
+    var ok = true;
+    for (var i = 0; i < expected.size(); i++) {
+        var reference = Quotes.reference(i);
+        refs += (i > 0 ? "; " : "") + reference;
+        ok = ok && reference.equals(expected[i]) && Quotes.text(i).length() > 0;
+    }
+    var annunciation = Quotes.text(Rosary.mysteryIndex(Rosary.JOYFUL, 1));
+    var eucharist = Quotes.text(Rosary.mysteryIndex(Rosary.LUMINOUS, 5));
+    logger.debug("refs=" + refs + " | " + annunciation + " | " + eucharist);
+    return ok && annunciation.equals("El Angel entró en su casa y la saludó, diciendo: «¡Alégrate!, llena de gracia, el Señor está contigo».")
+        && eucharist.equals("Esto es mi Cuerpo, que se entrega por ustedes. Hagan esto en memoria mía.");
+}
+
+// In the reading view DOWN and UP scroll a window of lines at a time. UP on the first line and DOWN on
+// the last window do nothing; going down shows every line of the text; hold UP does nothing. Every
+// mystery reads in 3 screens at most.
+(:test)
+function readingScrollsBetweenBothEndsAndShowsEveryLine(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var ok = true;
+    for (var set = 0; set < 4; set++) {
+        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+            var view = new MysteryView(set as Rosary.MysterySet, decade);
+            view.onLayout(dc);
+            var delegate = new MysteryDelegate(view);
+            var count = view.bodyLines().size();
+            var shown = new [count];
+            ScrollCheck.mark(shown, view.offset);
+            var handled = delegate.onPreviousPage();
+            var stuckAtTop = view.offset == 0;
+            var screens = 1;
+            while (screens <= count) {
+                var before = view.offset;
+                delegate.onNextPage();
+                if (view.offset == before) {
+                    break;
+                }
+                screens++;
+                ScrollCheck.mark(shown, view.offset);
+            }
+            var bottom = view.offset;
+            delegate.onNextPage();
+            var stuckAtBottom = view.offset == bottom && bottom == ReadingLayout.maxOffset(count);
+            var menu = delegate.onMenu();
+            var menuKept = view.offset == bottom;
+            while (view.offset > 0 && screens > 0) {
+                delegate.onPreviousPage();
+                screens--;
+            }
+            var backToTop = view.offset == 0;
+            var all = ScrollCheck.all(shown);
+            var screenCount = ScrollCheck.screens(count);
+            logger.debug(Quotes.reference(Rosary.mysteryIndex(set as Rosary.MysterySet, decade)) + ": " + count + " lines, "
+                + screenCount + " screens, last offset " + bottom + " all=" + all + " stuckAtTop=" + stuckAtTop
+                + " stuckAtBottom=" + stuckAtBottom + " menu=" + menu + " menuKept=" + menuKept + " backToTop=" + backToTop);
+            ok = ok && handled && stuckAtTop && stuckAtBottom && menu && menuKept && backToTop && all && screenCount <= 3;
+        }
+    }
+    return ok;
+}
+
+// Reading neither saves nor moves the rosary: the saved progress and the bead on the main screen stay
+// as they were while the mystery is read and scrolled. Uses the real Storage and puts back what was there.
+(:test)
+function readingLeavesTheProgressAndTheBeadAlone(logger as Logger) as Boolean {
+    var app = getApp();
+    var today = 20261012;
+    var before = Application.Storage.getValue(Rosary.PROGRESS_KEY);
+    var ok = false;
+    try {
+        Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
+        var rosary = new RosaryView(30, Rosary.JOYFUL);
+        new RosaryDelegate(rosary, today).onSelect();
+        var saved = app.loadProgress(today);
+        var view = new MysteryView(rosary.mysterySet, Rosary.readingDecade(rosary.step));
+        view.onLayout(ScreenArea.measuringDc());
+        var reading = new MysteryDelegate(view);
+        reading.onNextPage();
+        reading.onNextPage();
+        reading.onPreviousPage();
+        reading.onMenu();
+        var after = app.loadProgress(today);
+        logger.debug("saved=" + saved + " after=" + after + " step=" + rosary.step + " title=" + view.titleLines());
+        ok = saved == 31 && after == 31 && rosary.step == 31 && view.titleLines().size() == 3
+            && view.titleLines()[0].equals("2do") && view.bodyLines()[0].equals("La Visitación de");
+    } finally {
+        if (before == null) {
+            Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
+        } else {
+            Application.Storage.setValue(Rosary.PROGRESS_KEY, before as Application.PropertyValueType);
+        }
+    }
+    return ok;
+}
+
+(:test)
+module ScrollCheck {
+
+    // Marks the lines the window shows from this first line.
+    function mark(shown as Array, offset as Number) as Void {
+        for (var i = offset; i < offset + ReadingLayout.visibleLines() && i < shown.size(); i++) {
+            shown[i] = true;
+        }
+    }
+
+    function all(shown as Array) as Boolean {
+        for (var i = 0; i < shown.size(); i++) {
+            if (shown[i] != true) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Windows needed to read count lines.
+    function screens(count as Number) as Number {
+        var lines = ReadingLayout.visibleLines();
+        return (count + lines - 1) / lines;
+    }
+}

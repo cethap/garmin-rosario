@@ -3,8 +3,9 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 
 // Button input for the main widget screen: START and DOWN move to the next bead (on the Salve, they
-// pray it and finish the rosary), UP to the previous one, and holding UP (MENU) offers to start the
-// day over. BACK keeps its default behavior (exit); every move is already saved.
+// pray it and finish the rosary), UP to the previous one, and holding UP (MENU) opens a menu to read
+// the current mystery or start the day over. BACK keeps its default behavior (exit); every move is
+// already saved.
 class RosaryDelegate extends WatchUi.BehaviorDelegate {
 
     private var _view as RosaryView;
@@ -31,11 +32,23 @@ class RosaryDelegate extends WatchUi.BehaviorDelegate {
         return moveTo(Rosary.prev(_view.step));
     }
 
-    // Hold UP: asks "¿Reiniciar el rosario?"; ResetDelegate calls restart on YES.
+    // Hold UP: the menu with "Leer el misterio" and "Reiniciar"; RosaryMenuDelegate answers it.
     function onMenu() as Boolean {
+        WatchUi.pushView(RosaryMenu.build(_view.step, _view.mysterySet), new RosaryMenuDelegate(self), WatchUi.SLIDE_IMMEDIATE);
+        return true;
+    }
+
+    // "Leer el misterio": the reading view of the current mystery (Rosary.readingDecade). BACK returns
+    // here, on the same bead; nothing is saved and nothing vibrates.
+    function readMystery() as Void {
+        var view = new MysteryView(_view.mysterySet, Rosary.readingDecade(_view.step));
+        WatchUi.pushView(view, new MysteryDelegate(view), WatchUi.SLIDE_LEFT);
+    }
+
+    // "Reiniciar": asks "¿Reiniciar el rosario?"; ResetDelegate calls restart on YES.
+    function confirmRestart() as Void {
         var prompt = WatchUi.loadResource(Rez.Strings.ResetPrompt) as String;
         WatchUi.pushView(new WatchUi.Confirmation(prompt), new ResetDelegate(self), WatchUi.SLIDE_IMMEDIATE);
-        return true;
     }
 
     // Starts today's rosary over: forgets the saved progress (the glance reads "Sin empezar" again),

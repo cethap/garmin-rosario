@@ -108,7 +108,8 @@ module MainLayout {
 class RosaryView extends WatchUi.View {
 
     var step as Number;
-    private var _set as Rosary.MysterySet;
+    // The day's mysteries.
+    var mysterySet as Rosary.MysterySet;
     private var _clockFont as FontResource?;
     private var _ringX as Number;
     private var _ringY as Number;
@@ -122,7 +123,7 @@ class RosaryView extends WatchUi.View {
     function initialize(step as Number, set as Rosary.MysterySet) {
         View.initialize();
         self.step = step;
-        _set = set;
+        mysterySet = set;
         // Instinct 2 subscreen until onLayout reads the device's.
         _ringX = MainLayout.RING_X;
         _ringY = MainLayout.RING_Y;
@@ -173,8 +174,8 @@ class RosaryView extends WatchUi.View {
     }
 
     private function wrapText() as Void {
-        _titleLines = MainLayout.wrapTitle(Rosary.decadeTitle(step, _set));
-        _mysteryLines = MainLayout.wrapMystery(Rosary.subtitle(step, _set));
+        _titleLines = MainLayout.wrapTitle(Rosary.decadeTitle(step, mysterySet));
+        _mysteryLines = MainLayout.wrapMystery(Rosary.subtitle(step, mysterySet));
     }
 
     function onUpdate(dc as Dc) as Void {
