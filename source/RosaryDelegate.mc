@@ -58,7 +58,7 @@ class RosaryDelegate extends WatchUi.BehaviorDelegate {
         return true;
     }
 
-    // Plays Rosary.vibePattern: a short pulse per bead, three strong pulses into a decade's Gloria,
+    // Plays Rosary.vibePattern: a short pulse per bead, three strong pulses into each Gloria,
     // one long pulse when the Salve is prayed and the rosary ends.
     private function pulse(vibe as Rosary.Vibe) as Void {
         var pattern = Rosary.vibePattern(vibe);

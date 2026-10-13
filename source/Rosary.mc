@@ -26,8 +26,9 @@ module Rosary {
         LUMINOUS
     }
 
-    // Vibration a move produces: nothing, a short pulse, the multi-pulse that marks the Gloria
-    // after the 10 Avemarías of a decade, and the long one when the Salve is prayed (the end).
+    // Vibration a move produces: nothing, a short pulse, the multi-pulse that marks each Gloria (after
+    // the 3 opening Avemarías and after the 10 of each decade), and the long one when the Salve is
+    // prayed (the end).
     enum Vibe {
         VIBE_NONE,
         VIBE_SHORT,
@@ -278,8 +279,8 @@ module Rosary {
         if (to == DONE) {
             return VIBE_END;
         }
-        // Forward from the 10th Avemaría into a decade's Gloria. The opening Gloria stays a short pulse.
-        if (to == from + 1 && decadeAt(to) != 0 && prayerAt(to) == GLORY_BE) {
+        // Forward into any Gloria: after the 3rd opening Avemaría or the 10th of a decade.
+        if (to == from + 1 && prayerAt(to) == GLORY_BE) {
             return VIBE_GLORIA;
         }
         return VIBE_SHORT;

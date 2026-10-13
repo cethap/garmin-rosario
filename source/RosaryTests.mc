@@ -190,6 +190,7 @@ function nextAndPrevClampToTheSequence(logger as Logger) as Boolean {
 }
 
 // The long vibration marks the end of the Rosary: praying the Salve (71 -> DONE), not arriving at it.
+// Every Gloria reached forward vibrates as a Gloria, the opening one included.
 (:test)
 function vibrationMarksGloriaAfterTenHailMarysAndTheEnd(logger as Logger) as Boolean {
     var none = Rosary.vibeForMove(72, 72);
@@ -208,9 +209,27 @@ function vibrationMarksGloriaAfterTenHailMarysAndTheEnd(logger as Logger) as Boo
         + " firstGloria=" + firstGloria + " lastGloria=" + lastGloria + " back=" + back + " ninth=" + ninth
         + " salve=" + salve + " end=" + end + " leaveSalve=" + leaveSalve + " leaveEnd=" + leaveEnd);
     return none == Rosary.VIBE_NONE && still == Rosary.VIBE_NONE && bead == Rosary.VIBE_SHORT
-        && openingGloria == Rosary.VIBE_SHORT && firstGloria == Rosary.VIBE_GLORIA && lastGloria == Rosary.VIBE_GLORIA
+        && openingGloria == Rosary.VIBE_GLORIA && firstGloria == Rosary.VIBE_GLORIA && lastGloria == Rosary.VIBE_GLORIA
         && back == Rosary.VIBE_SHORT && ninth == Rosary.VIBE_SHORT && salve == Rosary.VIBE_SHORT
         && end == Rosary.VIBE_END && leaveSalve == Rosary.VIBE_SHORT && leaveEnd == Rosary.VIBE_SHORT;
+}
+
+// The Gloria after the 3 opening Avemarías (step 5) plays the same pattern as a decade's Gloria (user
+// report: "el primer gloria que es luego de los tres avemarías no tiene zumbido"). Coming back to it
+// from the first decade, and the beads around it, stay a short pulse.
+(:test)
+function openingGloriaVibratesLikeTheDecadeGlorias(logger as Logger) as Boolean {
+    var opening = Rosary.vibeForMove(4, 5);
+    var decade = Rosary.vibeForMove(16, 17);
+    var back = Rosary.vibeForMove(6, 5);
+    var thirdHailMary = Rosary.vibeForMove(3, 4);
+    var nextOurFather = Rosary.vibeForMove(5, 6);
+    var openingPattern = Rosary.vibePattern(opening).toString();
+    var decadePattern = Rosary.vibePattern(decade).toString();
+    logger.debug("prayer(5)=" + Rosary.prayerAt(5) + " opening=" + opening + " decade=" + decade + " back=" + back
+        + " thirdHailMary=" + thirdHailMary + " nextOurFather=" + nextOurFather + " pattern=" + openingPattern);
+    return Rosary.prayerAt(5) == Rosary.GLORY_BE && opening == Rosary.VIBE_GLORIA && openingPattern.equals(decadePattern)
+        && back == Rosary.VIBE_SHORT && thirdHailMary == Rosary.VIBE_SHORT && nextOurFather == Rosary.VIBE_SHORT;
 }
 
 // Reads the [duty %, ms] steps of Rosary.vibePattern.
@@ -260,7 +279,7 @@ module VibeCheck {
     }
 }
 
-// The Gloria after the 10 Avemarías is felt without looking: at least 3 pulses, all at full strength,
+// The Gloria after the Avemarías is felt without looking: at least 3 pulses, all at full strength,
 // in one Attention.vibrate call.
 (:test)
 function gloriaVibrationIsThreeFullStrengthPulses(logger as Logger) as Boolean {
