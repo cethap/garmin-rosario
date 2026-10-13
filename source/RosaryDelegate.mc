@@ -32,13 +32,21 @@ class RosaryDelegate extends WatchUi.BehaviorDelegate {
         return moveTo(Rosary.prev(_view.step));
     }
 
-    // Hold UP: the menu with "Leer el misterio" and "Reiniciar"; RosaryMenuDelegate answers it.
+    // Hold UP: the app's menu with "Leer misterio" and "Reiniciar" under the title of the mystery it
+    // reads (RosaryMenuView); RosaryMenuDelegate answers it.
     function onMenu() as Boolean {
-        WatchUi.pushView(RosaryMenu.build(_view.step, _view.mysterySet), new RosaryMenuDelegate(self), WatchUi.SLIDE_IMMEDIATE);
+        var menu = new RosaryMenuView(_view.mysterySet, Rosary.readingDecade(_view.step));
+        WatchUi.pushView(menu, new RosaryMenuDelegate(menu, self), WatchUi.SLIDE_IMMEDIATE);
         return true;
     }
 
-    // "Leer el misterio": the reading view of the current mystery (Rosary.readingDecade). BACK returns
+    // Closes the menu, which sits on top of this screen: before the menu opens an item, so BACK from
+    // that item lands here, and on BACK in the menu.
+    function closeMenu() as Void {
+        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+    }
+
+    // "Leer misterio": the reading view of the current mystery (Rosary.readingDecade). BACK returns
     // here, on the same bead; nothing is saved and nothing vibrates.
     function readMystery() as Void {
         var view = new MysteryView(_view.mysterySet, Rosary.readingDecade(_view.step));

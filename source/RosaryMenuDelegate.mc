@@ -1,37 +1,57 @@
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// Menu on hold UP (MENU) on the main screen: "Leer el misterio", with the title of the mystery it
-// opens as sublabel ("1er Misterio Gozoso"), and "Reiniciar".
-module RosaryMenu {
+// Buttons of the hold-UP menu (RosaryMenuView): DOWN and UP move the selection and stop at either end.
+// START closes the menu, then opens the selected item over the rosary: "Leer misterio" the reading view,
+// "Reiniciar" the "¿Reiniciar el rosario?" confirmation, so BACK from either lands on the rosary, on the
+// same bead. BACK closes the menu. Holding UP does nothing here. Nothing vibrates and nothing is saved.
+class RosaryMenuDelegate extends WatchUi.BehaviorDelegate {
 
-    function build(position as Number, set as Rosary.MysterySet) as WatchUi.Menu2 {
-        var menu = new WatchUi.Menu2({:title => Rez.Strings.AppName});
-        var title = Rosary.mysteryTitle(set, Rosary.readingDecade(position));
-        menu.addItem(new WatchUi.MenuItem(Rez.Strings.MenuRead, title, :read, null));
-        menu.addItem(new WatchUi.MenuItem(Rez.Strings.MenuReset, null, :reset, null));
-        return menu;
-    }
-}
-
-// Answer to the menu: the menu closes, then "Leer el misterio" opens the reading view and "Reiniciar"
-// asks "¿Reiniciar el rosario?" as before. Either way BACK lands on the rosary, on the same bead.
-class RosaryMenuDelegate extends WatchUi.Menu2InputDelegate {
-
+    private var _menu as RosaryMenuView;
     private var _rosary as RosaryDelegate;
 
-    function initialize(rosary as RosaryDelegate) {
-        Menu2InputDelegate.initialize();
+    function initialize(menu as RosaryMenuView, rosary as RosaryDelegate) {
+        BehaviorDelegate.initialize();
+        _menu = menu;
         _rosary = rosary;
     }
 
-    function onSelect(item as WatchUi.MenuItem) as Void {
-        var id = item.getId();
-        WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
+    // DOWN
+    function onNextPage() as Boolean {
+        if (_menu.moveDown()) {
+            WatchUi.requestUpdate();
+        }
+        return true;
+    }
+
+    // UP
+    function onPreviousPage() as Boolean {
+        if (_menu.moveUp()) {
+            WatchUi.requestUpdate();
+        }
+        return true;
+    }
+
+    // START: the menu closes first, so the item opens over the rosary.
+    function onSelect() as Boolean {
+        var id = _menu.selectedId();
+        _rosary.closeMenu();
         if (id == :read) {
             _rosary.readMystery();
         } else if (id == :reset) {
             _rosary.confirmRestart();
         }
+        return true;
+    }
+
+    // BACK: back to the rosary, on the same bead.
+    function onBack() as Boolean {
+        _rosary.closeMenu();
+        return true;
+    }
+
+    // Hold UP: consumed, so it neither opens the menu again nor moves the selection.
+    function onMenu() as Boolean {
+        return true;
     }
 }

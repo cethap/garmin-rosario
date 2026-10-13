@@ -2,7 +2,7 @@ import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.WatchUi;
 
-// Layout of the reading view ("Leer el misterio"), shared with the layout tests. No text ever goes
+// Layout of the reading view ("Leer misterio"), shared with the layout tests. No text ever goes
 // under the subscreen lens or its ring: the header (the mystery title) stays fixed in the band left of
 // the lens, where the main screen puts its title, and the body (the mystery's name, its Bible quote and
 // the reference) scrolls only inside a fixed window below the lens. The view clips its drawing to that

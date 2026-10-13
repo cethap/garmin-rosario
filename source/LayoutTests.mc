@@ -355,6 +355,83 @@ function readingViewDrawsEveryScrollPosition(logger as Logger) as Boolean {
     return drawn >= 20;
 }
 
+// The hold-UP menu, drawn by the app because the system menu's text was too small for the user: both
+// labels in the large font, each centered on its own bar in the full-width rows below the subscreen lens,
+// under the reading view's header (the current mystery's title beside the lens, its number in the
+// subscreen). At both selections every text drawn and the selected item's bar keep the 2px margin inside
+// the visible area (the number: inside the subscreen window), each label lies inside its bar (so the
+// selected one sits wholly on the white bar), the bars do not overlap, and the menu draws. The title,
+// wrapped whole in up to 3 lines for every mystery, ends above the first bar.
+(:test)
+function menuStaysInsideTheVisibleArea(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var ring = MainLayout.ring();
+    var seen = {} as Dictionary<String, Boolean>;
+    var firstBarTop = MenuLayout.bar(0)[1];
+    var ok = true;
+    for (var set = 0; set < 4; set++) {
+        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+            var menu = new RosaryMenuView(set as Rosary.MysterySet, decade);
+            ok = LayoutCheck.wrapsWhole(menu.title(), menu.titleLines(), 3, logger) && ok;
+            var header = ReadingLayout.headerPlan(menu.titleLines(), decade, ring[0], ring[1]);
+            for (var i = 0; i < header.size(); i++) {
+                ok = LayoutCheck.mainItemFits(dc, header[i], seen, logger) && ok;
+                ok = MenuCheck.endsAbove(dc, header[i], firstBarTop, logger) && ok;
+            }
+            for (var selected = 0; selected < MenuLayout.ITEM_COUNT; selected++) {
+                menu.selected = selected;
+                menu.onUpdate(dc);
+            }
+        }
+    }
+    var labels = new RosaryMenuView(Rosary.JOYFUL, 1).labels();
+    for (var selected = 0; selected < MenuLayout.ITEM_COUNT; selected++) {
+        var bar = MenuCheck.box(MenuLayout.bar(selected));
+        var barFits = ScreenArea.visible(bar);
+        logger.debug("selected " + selected + ": " + (barFits ? "fits " : "OUT ") + ScreenArea.describeVisible("bar", bar));
+        ok = ok && barFits;
+        for (var i = 0; i < labels.size(); i++) {
+            var item = MenuLayout.label(i, labels[i]);
+            ok = LayoutCheck.mainItemFits(dc, item, seen, logger) && ok;
+            ok = MenuCheck.onItsBar(dc, item, MenuLayout.bar(i), logger) && ok;
+        }
+    }
+    var first = MenuLayout.bar(0);
+    var second = MenuLayout.bar(1);
+    var large = MenuLayout.label(0, labels[0]).font == Graphics.FONT_LARGE && MenuLayout.label(1, labels[1]).font == Graphics.FONT_LARGE;
+    logger.debug("bars " + first + " " + second + " large font " + Graphics.getFontHeight(Graphics.FONT_LARGE) + "px (ascent "
+        + Graphics.getFontAscent(Graphics.FONT_LARGE) + ", descent " + Graphics.getFontDescent(Graphics.FONT_LARGE) + ")");
+    return ok && large && first[3] < second[1];
+}
+
+(:test)
+module MenuCheck {
+
+    function box(rect as Array<Number>) as Array<Float> {
+        return [rect[0].toFloat(), rect[1].toFloat(), rect[2].toFloat(), rect[3].toFloat()] as Array<Float>;
+    }
+
+    // The header text ends above the given row, so the bars never run into it.
+    function endsAbove(dc as Dc, item as Layout.TextItem, row as Number, logger as Logger) as Boolean {
+        var box = ScreenArea.measure(dc, item);
+        var ok = box[3] <= row;
+        if (!ok) {
+            logger.debug("OVERLAP header " + ScreenArea.describe(item.text, box) + " runs into the bar at row " + row);
+        }
+        return ok;
+    }
+
+    // The label lies inside its bar, with the gap it keeps on each side logged.
+    function onItsBar(dc as Dc, item as Layout.TextItem, bar as Array<Number>, logger as Logger) as Boolean {
+        var box = ScreenArea.measure(dc, item);
+        var ok = ScreenArea.boxInRect(box, bar[0], bar[1], bar[2], bar[3]);
+        logger.debug((ok ? "on bar " : "OFF bar ") + ScreenArea.describe(item.text, box) + " in " + bar + " gaps left "
+            + (box[0] - bar[0]).format("%.1f") + " top " + (box[1] - bar[1]).format("%.1f") + " right "
+            + (bar[2] - box[2]).format("%.1f") + " bottom " + (bar[3] - box[3]).format("%.1f"));
+        return ok;
+    }
+}
+
 (:test)
 module ReadingCheck {
 

@@ -10,8 +10,8 @@ A fast Connect IQ widget that guides the Rosary bead by bead on the Garmin Insti
 - **Subscreen ring**: 10 segments that fill as you pray the Avemarías of the decade, with the current Avemaría number in the center.
 - **Vibration**: a soft, short tap (100 ms) on each bead. When the Avemarías end and a Gloria starts (after the 3 of the opening and after the 10 of each mystery), three strong pulses (350 ms each, 200 ms apart, about 1.5 s in total), so you can tell it from a bead without looking. One long pulse (1 s) when you pray the Salve: press START or DOWN on the Salve to finish the Rosary.
 - **Progress saved for the day**: leave and come back and you continue where you were. A new day starts from the beginning.
-- **Menu**: hold UP on the main screen to open a menu with two options:
-  - **Leer el misterio**: read about the current mystery (its title shows under the option, for example "1er Misterio Gozoso"). During the opening it shows the 1st mystery, the one coming next; during a decade, that decade's mystery; on the Salve and once the Rosary is done, the 5th.
+- **Menu**: hold UP on the main screen to open the app's own menu, drawn in large type in the retro black-and-white style (the system menu's text was too small). The current mystery's title stays at the top left, beside the subscreen, with its number in the subscreen, as in the reading view. Below the subscreen, two options; the selected one is a white bar with black text:
+  - **Leer misterio**: read about the current mystery. During the opening it shows the 1st mystery, the one coming next; during a decade, that decade's mystery; on the Salve and once the Rosary is done, the 5th.
   - **Reiniciar**: start over after the confirmation "¿Reiniciar el rosario?". YES clears today's progress (the glance reads "Sin empezar" again) and goes back to the Credo with one short pulse; NO changes nothing.
 - **Reading view**: the mystery's title stays at the top left, beside the subscreen, and its number shows in the subscreen. Below the subscreen, the mystery's name, a short Bible quote and its reference ("Lc 1, 28") scroll in a fixed window, so no text ever runs under the subscreen ring. Every quote reads in three screens at most. Reading changes nothing: no vibration, and the progress and the current bead stay as they were.
 - **Bible quotes**: copied word for word from the Spanish Catholic Bible on the Holy See's site, "La Biblia – El Libro del Pueblo de Dios" (https://www.vatican.va/archive/ESL0506/_INDEX.HTM). A "…" marks a quote that starts or ends inside a sentence. The quotes live in `resources/strings/quotes.xml`, and only the one being read is loaded.
@@ -23,8 +23,19 @@ A fast Connect IQ widget that guides the Rosary bead by bead on the Garmin Insti
 |--------|--------|
 | START or DOWN | Next bead (on the Salve: finish the Rosary) |
 | UP | Previous bead |
-| Hold UP (MENU) | Menu: "Leer el misterio" or "Reiniciar" (start today's Rosary over, after a YES/NO confirmation) |
+| Hold UP (MENU) | Menu: "Leer misterio" or "Reiniciar" (start today's Rosary over, after a YES/NO confirmation) |
 | BACK | Exit (progress is already saved) |
+
+In the menu:
+
+| Button | Action |
+|--------|--------|
+| DOWN | Select the option below (does nothing on "Reiniciar") |
+| UP | Select the option above (does nothing on "Leer misterio") |
+| START | Open the selected option |
+| BACK | Back to the Rosary, on the same bead |
+
+From "Leer misterio" or the "Reiniciar" confirmation, BACK also returns to the Rosary.
 
 In the reading view:
 
@@ -52,7 +63,7 @@ monkeyc -f monkey.jungle -d instinct2 -o bin/Rosario.prg -y /path/to/developer_k
 
 ### Unit Tests
 
-The rosary logic in `source/Rosary.mc` is pure and covered by Run No Evil tests in `source/RosaryTests.mc`. `source/LayoutTests.mc` measures every text the glance, the main screen and the reading view draw with the real fonts and checks it against the visible area of the Instinct 2, the same per-row limits the watch face was calibrated with (`source/VisibleArea.mc`). Tests are excluded from regular builds.
+The rosary logic in `source/Rosary.mc` is pure and covered by Run No Evil tests in `source/RosaryTests.mc`. `source/LayoutTests.mc` measures every text the glance, the main screen, the menu and the reading view draw with the real fonts and checks it against the visible area of the Instinct 2, the same per-row limits the watch face was calibrated with (`source/VisibleArea.mc`). Tests are excluded from regular builds.
 
 ```sh
 monkeyc -f monkey.jungle -d instinct2 -o bin/RosarioTest.prg -y /path/to/developer_key -w -t
@@ -83,11 +94,12 @@ The simulator shows the glance first. Press START in the simulator to open the f
 | `source/Rosary.mc` | Pure rosary logic: sequence, mysteries, labels, vibration, saved progress |
 | `source/RosaryTests.mc` | Unit tests for `Rosary` and the buttons |
 | `source/Layout.mc` | Text layout of the glance, shared with the tests |
-| `source/LayoutTests.mc` | Layout tests for the glance, the main screen and the reading view |
+| `source/LayoutTests.mc` | Layout tests for the glance, the main screen, the menu and the reading view |
 | `source/VisibleArea.mc` | Test-only visible area of the Instinct 2, per screen row |
 | `source/RosaryView.mc` | Main screen and its layout |
 | `source/RosaryDelegate.mc` | Buttons, vibration, saving and starting over |
-| `source/RosaryMenuDelegate.mc` | Menu on hold UP: "Leer el misterio" and "Reiniciar" |
+| `source/RosaryMenuView.mc` | Menu on hold UP ("Leer misterio" and "Reiniciar") and its layout |
+| `source/RosaryMenuDelegate.mc` | Buttons of the menu: move, open and back |
 | `source/ResetDelegate.mc` | Answer to the start-over confirmation |
 | `source/MysteryView.mc` | Reading view of the current mystery, its layout and the quote loader |
 | `source/MysteryDelegate.mc` | Buttons of the reading view: scroll and back |

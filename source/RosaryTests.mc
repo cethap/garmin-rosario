@@ -510,7 +510,7 @@ function resetPromptIsInSpanish(logger as Logger) as Boolean {
     return prompt.equals("¿Reiniciar el rosario?");
 }
 
-// "Leer el misterio" reads the current mystery: the first, the one coming next, during the opening;
+// "Leer misterio" reads the current mystery: the first, the one coming next, during the opening;
 // mystery n during decade n; the fifth on the Salve and once the rosary is done.
 (:test)
 function readingFollowsTheCurrentMystery(logger as Logger) as Boolean {
@@ -528,25 +528,107 @@ function readingFollowsTheCurrentMystery(logger as Logger) as Boolean {
         && first.equals(Rosary.decadeTitle(6, Rosary.JOYFUL));
 }
 
-// Hold UP opens a menu: "Leer el misterio", with the title of the mystery it opens as sublabel, and
+// Hold UP opens the app's own menu: the title of the mystery "Leer misterio" reads (the 1st during the
+// opening, the n-th during decade n, the 5th on the Salve), over "Leer misterio", selected first, and
 // "Reiniciar".
 (:test)
 function menuOffersReadingTheMysteryAndRestarting(logger as Logger) as Boolean {
-    var opening = RosaryMenu.build(0, Rosary.JOYFUL);
-    var read = opening.getItem(0);
-    var reset = opening.getItem(1);
-    var second = RosaryMenu.build(20, Rosary.GLORIOUS).getItem(0);
-    var salve = RosaryMenu.build(Rosary.LAST_STEP, Rosary.SORROWFUL).getItem(0);
-    if (read == null || reset == null || second == null || salve == null) {
-        logger.debug("missing menu item");
-        return false;
+    var opening = new RosaryMenuView(Rosary.JOYFUL, Rosary.readingDecade(0));
+    var second = new RosaryMenuView(Rosary.GLORIOUS, Rosary.readingDecade(20));
+    var salve = new RosaryMenuView(Rosary.SORROWFUL, Rosary.readingDecade(Rosary.LAST_STEP));
+    var labels = opening.labels();
+    logger.debug("labels=" + labels + " selected=" + opening.selected + " id=" + opening.selectedId()
+        + " titles=" + opening.titleLines() + " | " + second.title() + " | " + salve.title());
+    return labels.size() == MenuLayout.ITEM_COUNT && labels[0].equals("Leer misterio") && labels[1].equals("Reiniciar")
+        && opening.selected == 0 && opening.selectedId() == :read
+        && opening.title().equals("1er Misterio Gozoso") && opening.titleLines().toString().equals(["1er", "Misterio", "Gozoso"].toString())
+        && second.title().equals("2do Misterio Glorioso") && salve.title().equals("5to Misterio Doloroso");
+}
+
+// In the menu DOWN and UP move the selection and stop at either end (no wrap-around), and hold UP does
+// nothing; none of them opens anything. BACK closes the menu and nothing else, so the rosary is back on
+// the same bead.
+(:test)
+function menuSelectionStopsAtBothEndsAndBackCloses(logger as Logger) as Boolean {
+    var rosaryView = new RosaryView(31, Rosary.JOYFUL);
+    var rosary = new MenuFake.RecordingRosary(rosaryView);
+    var menu = new RosaryMenuView(rosaryView.mysterySet, Rosary.readingDecade(rosaryView.step));
+    var delegate = new RosaryMenuDelegate(menu, rosary);
+    var trail = [menu.selected];
+    var handled = delegate.onPreviousPage();
+    trail.add(menu.selected);
+    handled = delegate.onNextPage() && handled;
+    trail.add(menu.selected);
+    var resetSelected = menu.selectedId() == :reset;
+    handled = delegate.onNextPage() && handled;
+    trail.add(menu.selected);
+    handled = delegate.onMenu() && handled;
+    trail.add(menu.selected);
+    handled = delegate.onPreviousPage() && handled;
+    trail.add(menu.selected);
+    var readSelected = menu.selectedId() == :read;
+    var quiet = rosary.calls.size() == 0;
+    var back = delegate.onBack();
+    logger.debug("trail=" + trail + " handled=" + handled + " quiet=" + quiet + " back=" + back
+        + " calls=" + rosary.calls + " step=" + rosaryView.step);
+    return handled && quiet && back && resetSelected && readSelected
+        && trail.toString().equals([0, 0, 1, 1, 1, 0].toString())
+        && rosary.calls.toString().equals(["close"].toString()) && rosaryView.step == 31;
+}
+
+// START closes the menu, then opens the selected item over the rosary, so BACK from it lands on the
+// rosary: "Leer misterio" the reading view (RosaryDelegate.readMystery), "Reiniciar" the confirmation
+// "¿Reiniciar el rosario?" (RosaryDelegate.confirmRestart). A recording rosary delegate stands in for
+// the real one, which would push those views.
+(:test)
+function menuSelectOpensTheChosenItemOverTheRosary(logger as Logger) as Boolean {
+    var rosaryView = new RosaryView(31, Rosary.JOYFUL);
+    var reading = MenuFake.select(rosaryView, 0);
+    var restarting = MenuFake.select(rosaryView, 1);
+    logger.debug("read: " + reading + " restart: " + restarting + " step=" + rosaryView.step);
+    return reading.toString().equals([true, "Leer misterio", ["close", "read"]].toString())
+        && restarting.toString().equals([true, "Reiniciar", ["close", "restart"]].toString())
+        && rosaryView.step == 31;
+}
+
+(:test)
+module MenuFake {
+
+    // A rosary delegate that records what the menu asks of it instead of pushing and popping views.
+    class RecordingRosary extends RosaryDelegate {
+        var calls as Array<String>;
+
+        function initialize(view as RosaryView) {
+            RosaryDelegate.initialize(view, 20261012);
+            calls = [] as Array<String>;
+        }
+
+        function closeMenu() as Void {
+            calls.add("close");
+        }
+
+        function readMystery() as Void {
+            calls.add("read");
+        }
+
+        function confirmRestart() as Void {
+            calls.add("restart");
+        }
     }
-    logger.debug("read=" + read.getLabel() + " / " + read.getSubLabel() + " id=" + read.getId()
-        + " reset=" + reset.getLabel() + " / " + reset.getSubLabel() + " id=" + reset.getId()
-        + " second=" + second.getSubLabel() + " salve=" + salve.getSubLabel());
-    return read.getLabel().equals("Leer el misterio") && "1er Misterio Gozoso".equals(read.getSubLabel()) && read.getId() == :read
-        && reset.getLabel().equals("Reiniciar") && reset.getSubLabel() == null && reset.getId() == :reset
-        && "2do Misterio Glorioso".equals(second.getSubLabel()) && "5to Misterio Doloroso".equals(salve.getSubLabel());
+
+    // Opens the menu over the rosary, presses DOWN downs times and START: [START handled, the label of
+    // the selected item, what the rosary was asked to do].
+    function select(rosaryView as RosaryView, downs as Number) as Array {
+        var rosary = new RecordingRosary(rosaryView);
+        var menu = new RosaryMenuView(rosaryView.mysterySet, Rosary.readingDecade(rosaryView.step));
+        var delegate = new RosaryMenuDelegate(menu, rosary);
+        for (var i = 0; i < downs; i++) {
+            delegate.onNextPage();
+        }
+        var label = menu.labels()[menu.selected];
+        var handled = delegate.onSelect();
+        return [handled, label, rosary.calls];
+    }
 }
 
 // Each of the 20 mysteries has its own quote, loaded from the resources with its reference, in
