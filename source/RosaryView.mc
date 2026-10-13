@@ -24,7 +24,8 @@ module MainLayout {
     const MYSTERY_CENTER_Y = 101;
     const MYSTERY_WIDTH = 164;
     const MYSTERY_PITCH = 21;
-    // fitTextToArea heights that allow 2 and 3 lines of the tiny font (it spaces them 26px apart).
+    // fitTextToArea heights that allow 1, 2 and 3 lines of the tiny font (it spaces them 26px apart).
+    const ONE_LINE_HEIGHT = 26;
     const TWO_LINES_HEIGHT = 52;
     const THREE_LINES_HEIGHT = 78;
     // Current prayer, centered horizontally, from this top line, in the largest font whose line holds it
@@ -57,8 +58,35 @@ module MainLayout {
     }
 
     // Word-wraps the decade title and the mystery with a system font (they have accents).
+    // A title that fitTextToArea cannot fit in 3 lines without cutting a word holds a word wider than the
+    // title's width, such as French "douloureux" (82px), which it would cut to "doulour…". That title wraps
+    // at spaces instead, the wide word on a line of its own: it is always the last word, and the lower rows
+    // the last line takes leave it room (LayoutTests.mc measures every title in its place).
     function wrapTitle(text as String) as Array<String> {
-        return wrap(text, TITLE_WIDTH, THREE_LINES_HEIGHT);
+        var fitted = Graphics.fitTextToArea(text, Graphics.FONT_TINY, TITLE_WIDTH, THREE_LINES_HEIGHT, false);
+        if (fitted != null) {
+            return Rosary.splitLines(fitted);
+        }
+        var lines = [] as Array<String>;
+        var line = null as String?;
+        var rest = text;
+        while (rest.length() > 0) {
+            var cut = rest.find(" ");
+            var word = (cut == null ? rest : rest.substring(0, cut)) as String;
+            rest = (cut == null ? "" : rest.substring(cut + 1, rest.length())) as String;
+            if (line == null) {
+                line = word;
+            } else if (Graphics.fitTextToArea(line + " " + word, Graphics.FONT_TINY, TITLE_WIDTH, ONE_LINE_HEIGHT, false) != null) {
+                line = line + " " + word;
+            } else {
+                lines.add(line);
+                line = word;
+            }
+        }
+        if (line != null) {
+            lines.add(line);
+        }
+        return lines;
     }
 
     function wrapMystery(text as String) as Array<String> {

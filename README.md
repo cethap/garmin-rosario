@@ -17,8 +17,9 @@ A fast Connect IQ widget that guides the Rosary bead by bead on the Garmin Insti
 - **Bible quotes**: copied word for word, in each language from its own Catholic Bible:
   - English: the Douay-Rheims Bible, Challoner revision (public domain), from https://www.drbo.org/. References follow its numbering, which is the Vulgate's in places (the voice from the cloud at the Transfiguration is Mark 9:6).
   - Spanish: "La Biblia – El Libro del Pueblo de Dios" on the Holy See's site (https://www.vatican.va/archive/ESL0506/_INDEX.HTM).
+  - French: "La Sainte Bible" translated by Augustin Crampon, 1923 edition (public domain), from French Wikisource (https://fr.wikisource.org/wiki/Bible_Crampon_1923), with its no-break spaces inside « » and before : ; ? !. Mark 9 follows the Vulgate's numbering there too (Mc 9, 6).
 
-  A "…" marks a quote that starts or ends inside a sentence. The quotes live in `quotes.xml` under each language's strings (`resources/strings` for English, `resources-spa/strings` for Spanish), and only the one being read is loaded.
+  A "…" marks a quote that starts or ends inside a sentence. The quotes live in `quotes.xml` under each language's strings (`resources/strings` for English, `resources-spa/strings` for Spanish, `resources-fre/strings` for French), and only the one being read is loaded.
 - **Glance**: the day's mysteries right above today's progress, as one block ("Gozosos" over "Sin empezar", "En progreso", "Misterio 2/5", "Salve" or "Completado"). "En progreso" covers the opening (Credo to the first Gloria); "Completado" appears once the Salve is prayed. The system's rosary icon stays in the subscreen next to it.
 
 ## Controls
@@ -76,7 +77,7 @@ connectiq &
 DEVELOPER_KEY=/path/to/developer_key.der scripts/test-all.sh
 ```
 
-The script prints one line per language, for example `spa PASSED (passed=50, failed=0, errors=0)`, and exits with 0 only when every suite passes. Pass languages to run only those (`scripts/test-all.sh spa`). It needs Java 17 or later on the `PATH`; it finds the SDK chosen in the SDK Manager, or set `CIQ_SDK`. Builds and logs go to `bin/test` (`TEST_OUT`).
+The script prints one line per language, `PASSED` or `FAILED` with the simulator's counts (and the log's path when it fails), and exits with 0 only when every suite passes. Pass languages to run only those (`scripts/test-all.sh spa`). It needs Java 17 or later on the `PATH`; it finds the SDK chosen in the SDK Manager, or set `CIQ_SDK`. Builds and logs go to `bin/test` (`TEST_OUT`).
 
 How it works: the simulator runs in English and cannot switch its language from the command line, so each `test-<lang>.jungle` puts that language's strings over the base ones. Tests that pin a text word for word live in `source/Pins<Lang>.mc`, annotated with their language, and each suite leaves out the other languages' pins. Every build uses `-w`, and a warning fails the suite, because a string a translation leaves out shows up as one. A run that hangs is stopped after `TEST_TIMEOUT` seconds (default 180), with the client it started, and tried once more.
 

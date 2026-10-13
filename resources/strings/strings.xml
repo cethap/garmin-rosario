@@ -13,8 +13,7 @@
     <!--
         The glance: the day's mysteries over today's progress ("Joyful" over "Mystery 2/5"). Only these
         strings are marked scope="glance", in every language, so the glance's 32KB holds no other text
-        (scripts/check-glance-strings.py checks it). The set names in plural also make the main screen's
-        SetTitle, and PrayerSalve is the prayer the main screen names too.
+        (scripts/check-glance-strings.py checks it). PrayerSalve is the prayer the main screen names too.
     -->
     <string id="SetPluralJoyful" scope="glance">Joyful</string>
     <string id="SetPluralSorrowful" scope="glance">Sorrowful</string>
@@ -44,8 +43,11 @@
     <!-- Title of the main screen at the opening and at the Salve. -->
     <string id="OpeningTitle">Opening Prayers</string>
     <string id="ClosingTitle">Closing Prayer</string>
-    <!-- Line under the title at the opening and at the Salve: $1$ the set name in plural (Joyful Mysteries). -->
-    <string id="SetTitle">$1$ Mysteries</string>
+    <!-- Line under the title at the opening and at the Salve: the day's mysteries. -->
+    <string id="SetTitleJoyful">Joyful Mysteries</string>
+    <string id="SetTitleSorrowful">Sorrowful Mysteries</string>
+    <string id="SetTitleGlorious">Glorious Mysteries</string>
+    <string id="SetTitleLuminous">Luminous Mysteries</string>
 
     <!--
         Title of each mystery on the main screen, the menu and the reading view: $1$ the ordinal, $2$ the set

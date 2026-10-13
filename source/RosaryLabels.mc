@@ -34,14 +34,17 @@ module Rosary {
         return mysteryTitle(set, decade);
     }
 
-    // Line under the title: the current mystery, or the day's set ("Misterios Gozosos", the SetTitle
-    // template) at the opening and the Salve.
+    // Line under the title: the current mystery, or the day's set ("Misterios Gozosos") at the opening and
+    // the Salve. Each set's title is a string of its own, not a template over the glance's set name, so each
+    // language writes it its own way (French "Mystères joyeux", with the adjective in lower case).
     function subtitle(step as Number, set as MysterySet) as String {
         var decade = decadeAt(step);
         if (decade >= 1 && decade <= DECADES) {
             return mysteryName(set, decade);
         }
-        return Lang.format(loadText(Rez.Strings.SetTitle), [setNamePlural(set)]);
+        var ids = [Rez.Strings.SetTitleJoyful, Rez.Strings.SetTitleSorrowful, Rez.Strings.SetTitleGlorious,
+            Rez.Strings.SetTitleLuminous] as Array<ResourceId>;
+        return loadText(ids[set as Number]);
     }
 
     // "1er Misterio Gozoso" .. "5to Misterio Luminoso" for mystery 1..5 of a set: the MysteryTitle template

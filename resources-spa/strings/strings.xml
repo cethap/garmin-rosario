@@ -8,8 +8,8 @@
 
     <!--
         The glance: the day's mysteries over today's progress ("Gozosos" over "Misterio 2/5"). Only these
-        strings are marked scope="glance", so the glance's 32KB holds no other text. The set names in plural
-        also make the main screen's SetTitle, and PrayerSalve is the prayer the main screen names too.
+        strings are marked scope="glance", so the glance's 32KB holds no other text. PrayerSalve is the prayer
+        the main screen names too.
     -->
     <string id="SetPluralJoyful" scope="glance">Gozosos</string>
     <string id="SetPluralSorrowful" scope="glance">Dolorosos</string>
@@ -35,8 +35,11 @@
     <!-- Title of the main screen at the opening and at the Salve. -->
     <string id="OpeningTitle">Inicio</string>
     <string id="ClosingTitle">Final</string>
-    <!-- Line under the title at the opening and at the Salve: $1$ the set name in plural (Misterios Gozosos). -->
-    <string id="SetTitle">Misterios $1$</string>
+    <!-- Line under the title at the opening and at the Salve: the day's mysteries. -->
+    <string id="SetTitleJoyful">Misterios Gozosos</string>
+    <string id="SetTitleSorrowful">Misterios Dolorosos</string>
+    <string id="SetTitleGlorious">Misterios Gloriosos</string>
+    <string id="SetTitleLuminous">Misterios Luminosos</string>
 
     <!--
         Title of each mystery on the main screen, the menu and the reading view: $1$ the ordinal, $2$ the set

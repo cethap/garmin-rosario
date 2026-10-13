@@ -377,6 +377,114 @@ function readingFontHasEveryGlyph(logger as Logger) as Boolean {
     return ok;
 }
 
+// Every character the other screens draw has a glyph in the font they draw it with, as the reading view's
+// in the tiny font above: the glance's labels (medium), the titles and the mystery names (tiny), the prayer
+// labels (in MainLayout.prayerFont), the menu's labels (large) and the reset prompt, which the system's
+// confirmation draws in a font of its own, so in every font. French needs é è ê à ç ô Ô É ’ and the
+// no-break space, which every font has.
+(:test)
+function screenFontsHaveEveryGlyph(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var tiny = Graphics.FONT_TINY;
+    var texts = [] as Array<String>;
+    var fonts = [] as Array<Graphics.FontType>;
+    // One step of the opening, of each decade and of the closing: the title and the line under it depend
+    // only on the decade.
+    var decadeSteps = [0, 6, 19, 32, 45, 58, Rosary.LAST_STEP];
+    for (var set = 0; set < 4; set++) {
+        texts.add(Rosary.glanceTitle(set as Rosary.MysterySet));
+        fonts.add(Graphics.FONT_MEDIUM);
+        for (var i = 0; i < decadeSteps.size(); i++) {
+            texts.add(Rosary.decadeTitle(decadeSteps[i], set as Rosary.MysterySet));
+            fonts.add(tiny);
+            texts.add(Rosary.subtitle(decadeSteps[i], set as Rosary.MysterySet));
+            fonts.add(tiny);
+        }
+    }
+    for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
+        texts.add(Rosary.glanceSummary(position));
+        fonts.add(Graphics.FONT_MEDIUM);
+    }
+    for (var step = 0; step <= Rosary.LAST_STEP; step++) {
+        var label = Rosary.prayerLabel(step);
+        texts.add(label);
+        fonts.add(MainLayout.prayerFont(dc, label));
+    }
+    var menu = new RosaryMenuView(Rosary.JOYFUL, 1).labels();
+    for (var i = 0; i < menu.size(); i++) {
+        texts.add(menu[i]);
+        fonts.add(Graphics.FONT_LARGE);
+    }
+    var prompt = Rosary.loadText(Rez.Strings.ResetPrompt);
+    var all = [Graphics.FONT_XTINY, Graphics.FONT_TINY, Graphics.FONT_SMALL, Graphics.FONT_MEDIUM, Graphics.FONT_LARGE];
+    for (var i = 0; i < all.size(); i++) {
+        texts.add(prompt);
+        fonts.add(all[i] as Graphics.FontType);
+    }
+    var checked = {} as Dictionary<String, Number>;
+    var ok = true;
+    for (var t = 0; t < texts.size(); t++) {
+        ok = GlyphCheck.allDrawn(dc, texts[t], fonts[t], checked) && ok;
+    }
+    logger.debug("non-ASCII glyph widths by font " + checked);
+    return ok;
+}
+
+// The reading view never breaks a line before closing punctuation or after an opening guillemet: no body
+// line of any mystery starts with : ; ? ! » , or . and none ends with «. French sets a space before : ; ? !
+// and inside « », and the quotes keep the no-break spaces of their source there, which the wrap does not
+// break at.
+(:test)
+function readingNeverBreaksAtPunctuation(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var ok = true;
+    for (var set = 0; set < 4; set++) {
+        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+            var view = new MysteryView(set as Rosary.MysterySet, decade);
+            view.onLayout(dc);
+            var lines = view.bodyLines();
+            for (var i = 0; i < lines.size(); i++) {
+                var chars = lines[i].toCharArray();
+                var first = chars[0];
+                var last = chars[chars.size() - 1];
+                var bad = first == ':' || first == ';' || first == '?' || first == '!' || first == '»' || first == ','
+                    || first == '.' || last == '«';
+                if (bad) {
+                    logger.debug("BREAK " + Quotes.reference(Rosary.mysteryIndex(set as Rosary.MysterySet, decade)) + " line "
+                        + i + ": '" + lines[i] + "'");
+                }
+                ok = ok && !bad;
+            }
+        }
+    }
+    return ok;
+}
+
+(:test)
+module GlyphCheck {
+
+    // Every non-ASCII character of the text has a glyph in the font: it measures neither 0 nor what a
+    // character the font lacks measures (a CJK one; the font draws a box for it). Each character and font
+    // is checked once and its width kept in checked ("é@medium" => 11).
+    function allDrawn(dc as Dc, text as String, font as Graphics.FontType, checked as Dictionary<String, Number>) as Boolean {
+        var missing = dc.getTextWidthInPixels("中", font);
+        var name = ScreenArea.fontName(font);
+        var chars = text.toCharArray();
+        var ok = true;
+        for (var c = 0; c < chars.size(); c++) {
+            var glyph = chars[c].toString();
+            var key = glyph + "@" + name;
+            if (chars[c].toNumber() < 128 || checked.hasKey(key)) {
+                continue;
+            }
+            var width = dc.getTextWidthInPixels(glyph, font);
+            checked[key] = width;
+            ok = ok && width > 0 && width != missing;
+        }
+        return ok;
+    }
+}
+
 // The reading view lays out and draws every mystery at every scroll position, clip included, and stays
 // small: each open view, measured on its own after one warm-up view, holds less than
 // ReadingCheck.MEMORY_BUDGET bytes.

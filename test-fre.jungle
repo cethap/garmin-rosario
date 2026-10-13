@@ -1,0 +1,7 @@
+# French unit-test suite, built by scripts/test-all.sh (monkeyc -f test-fre.jungle -t).
+# The simulator runs in English and has no command to switch its language, so the French strings are put
+# over the base ones instead: of two resource folders, the later one wins. The French pins (:fre) stay in,
+# and the other languages' pins, which share their test names, are left out.
+project.manifest = manifest.xml
+base.resourcePath = $(base.resourcePath);resources-fre
+base.excludeAnnotations = $(base.excludeAnnotations);eng;spa
