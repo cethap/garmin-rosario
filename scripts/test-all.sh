@@ -13,7 +13,9 @@
 #   TEST_OUT       folder for the builds and their logs (default: bin/test)
 #   TEST_TIMEOUT   seconds a run may take before it counts as hung (default: 180)
 #
-# Needs a running simulator (connectiq &), Java 17 or later on the PATH, and perl (part of macOS).
+# Needs a running simulator (connectiq &), Java 17 or later on the PATH, perl and python3.
+#
+# First it runs scripts/check-glance-strings.py: the glance may load only glance-scoped strings.
 #
 # Each suite is that language's strings put over the base ones, plus that language's pins (see
 # test-spa.jungle). A build warning fails the suite: a string a translation leaves out shows up as one
@@ -63,6 +65,10 @@ if [ ${#LANGUAGES[@]} -eq 0 ]; then
 fi
 
 mkdir -p "$OUT"
+
+# The glance may use only glance-scoped strings and glance code. A slip crashes the glance on the watch
+# only: the compiler does not warn and the tests run as the full app, so it is checked first.
+python3 scripts/check-glance-strings.py || exit 1
 
 # Runs a test build in the simulator, its output in a log. MonkeyDoDeux is what the SDK's monkeydo script
 # starts; running it directly, in a new process group, lets the timeout stop it and every process it

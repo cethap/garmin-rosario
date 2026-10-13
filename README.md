@@ -76,6 +76,8 @@ The script prints one line per language, for example `spa PASSED (passed=50, fai
 
 How it works: the simulator runs in English and cannot switch its language from the command line, so each `test-<lang>.jungle` puts that language's strings over the base ones. Tests that pin a text word for word live in `source/Pins<Lang>.mc`, annotated with their language, and each suite leaves out the other languages' pins. Every build uses `-w`, and a warning fails the suite, because a string a translation leaves out shows up as one. A run that hangs is stopped after `TEST_TIMEOUT` seconds (default 180), with the client it started, and tried once more.
 
+Before the builds, the script runs `scripts/check-glance-strings.py`. The glance can load only the strings marked `scope="glance"` and the code annotated `(:glance)`; anything else crashes it on the watch, while the compiler does not warn and the tests, which run as the full app, pass. The check fails when glance code looks up a string that is not glance-scoped in every language, calls code outside the glance (such as `source/RosaryLabels.mc`), or when a glance-scoped string goes unused.
+
 ### Run in the Simulator
 
 ```sh
