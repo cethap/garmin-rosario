@@ -14,7 +14,11 @@ A fast Connect IQ widget that guides the Rosary bead by bead on the Garmin Insti
   - **Leer misterio**: read about the current mystery. During the opening it shows the 1st mystery, the one coming next; during a decade, that decade's mystery; on the Salve and once the Rosary is done, the 5th.
   - **Reiniciar**: start over after the confirmation "¿Reiniciar el rosario?". YES clears today's progress (the glance reads "Sin empezar" again) and goes back to the Credo with one short pulse; NO changes nothing.
 - **Reading view**: the mystery's title stays at the top left, beside the subscreen, and its number shows in the subscreen. Below the subscreen, the mystery's name, a short Bible quote and its reference ("Lc 1, 28") scroll in a fixed window, so no text ever runs under the subscreen ring. Every quote reads in three screens at most. Reading changes nothing: no vibration, and the progress and the current bead stay as they were.
-- **Bible quotes**: copied word for word from the Spanish Catholic Bible on the Holy See's site, "La Biblia – El Libro del Pueblo de Dios" (https://www.vatican.va/archive/ESL0506/_INDEX.HTM). A "…" marks a quote that starts or ends inside a sentence. The quotes live in `resources/strings/quotes.xml`, and only the one being read is loaded.
+- **Bible quotes**: copied word for word, in each language from its own Catholic Bible:
+  - English: the Douay-Rheims Bible, Challoner revision (public domain), from https://www.drbo.org/. References follow its numbering, which is the Vulgate's in places (the voice from the cloud at the Transfiguration is Mark 9:6).
+  - Spanish: "La Biblia – El Libro del Pueblo de Dios" on the Holy See's site (https://www.vatican.va/archive/ESL0506/_INDEX.HTM).
+
+  A "…" marks a quote that starts or ends inside a sentence. The quotes live in `quotes.xml` under each language's strings (`resources/strings` for English, `resources-spa/strings` for Spanish), and only the one being read is loaded.
 - **Glance**: the day's mysteries right above today's progress, as one block ("Gozosos" over "Sin empezar", "En progreso", "Misterio 2/5", "Salve" or "Completado"). "En progreso" covers the opening (Credo to the first Gloria); "Completado" appears once the Salve is prayed. The system's rosary icon stays in the subscreen next to it.
 
 ## Controls

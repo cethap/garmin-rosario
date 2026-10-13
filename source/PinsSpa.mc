@@ -34,6 +34,12 @@ function prayerLabelNamesTheCurrentBead(logger as Logger) as Boolean {
     return TextPins.prayerLabels(logger, "Credo,Padre Nuestro,Avemaría 2,Gloria,Avemaría 7,Avemaría 10,Gloria,Oh Jesús mío,Salve");
 }
 
+// Every Spanish label fits the large font, so the main screen draws them as it always has.
+(:test :spa)
+function prayerLabelStepsDownOnlyForLongNames(logger as Logger) as Boolean {
+    return TextPins.prayerFonts(logger, "large,large,large,large,large,large,large,large,large");
+}
+
 (:test :spa)
 function decadeTitleUsesTheOrdinals(logger as Logger) as Boolean {
     return TextPins.decadeTitles(logger, ["Inicio", "1er Misterio Gozoso", "2do Misterio Doloroso", "3er Misterio Glorioso",

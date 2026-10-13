@@ -1,1 +1,6 @@
 project.manifest = manifest.xml
+
+# A plain test build (-t) is the English suite, the base language: the simulator runs in English. The other
+# languages' pins share their test names, so they are left out (scripts/test-all.sh runs every language's
+# suite from its test-<lang>.jungle). Release builds carry no tests either way.
+base.excludeAnnotations = $(base.excludeAnnotations);spa;fre

@@ -1,61 +1,61 @@
 <strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
     <!--
-        A Bible quote for each mystery, read from the menu on hold UP ("Leer el misterio"). Loaded one at
-        a time with WatchUi.loadResource. QuoteN and RefN follow Rosary.mysteryIndex + 1: Gozosos 1..5,
-        Dolorosos 6..10, Gloriosos 11..15, Luminosos 16..20.
+        A Bible quote for each mystery, read from the menu on hold UP ("Read mystery"). Loaded one at a time
+        with WatchUi.loadResource. QuoteN and RefN follow Rosary.mysteryIndex + 1: Joyful 1..5, Sorrowful
+        6..10, Glorious 11..15, Luminous 16..20.
 
-        Source: "La Biblia - El Libro del Pueblo de Dios" on the Holy See's site
-        (https://www.vatican.va/archive/ESL0506/_INDEX.HTM); one URL per quote in odd/tasks/rosary-app.md.
-        Each quote is copied verbatim from the verse text there. "…" marks an excerpt that starts or ends
-        inside a sentence; « » are kept when the excerpt holds both, and left out when the spoken words
-        open or close outside it.
+        Source: the Douay-Rheims Bible, Challoner revision (public domain), as published at
+        https://www.drbo.org/; one URL per quote in odd/tasks/rosary-distribution.md. Each quote is copied
+        verbatim from the verse text there, and the references use its numbering (Mark 9 follows the
+        Vulgate: the voice from the cloud is verse 6). "…" marks an excerpt that starts or ends inside a
+        sentence.
     -->
 
-    <!-- Gozosos -->
-    <string id="Quote1">El Angel entró en su casa y la saludó, diciendo: «¡Alégrate!, llena de gracia, el Señor está contigo».</string>
-    <string id="Ref1">Lc 1, 28</string>
-    <string id="Quote2">¡Tú eres bendita entre todas las mujeres y bendito es el fruto de tu vientre!</string>
-    <string id="Ref2">Lc 1, 42</string>
-    <string id="Quote3">…María dio a luz a su Hijo primogénito, lo envolvió en pañales y lo acostó en un pesebre…</string>
-    <string id="Ref3">Lc 2, 7</string>
-    <string id="Quote4">…mis ojos han visto la salvación que preparaste delante de todos los pueblos…</string>
-    <string id="Ref4">Lc 2, 30-31</string>
-    <string id="Quote5">Jesús les respondió: «¿Por qué me buscaban? ¿No sabían que yo debo ocuparme de los asuntos de mi Padre?».</string>
-    <string id="Ref5">Lc 2, 49</string>
+    <!-- Joyful -->
+    <string id="Quote1">And the angel being come in, said unto her: Hail, full of grace, the Lord is with thee: blessed art thou among women.</string>
+    <string id="Ref1">Lk 1:28</string>
+    <string id="Quote2">Blessed art thou among women, and blessed is the fruit of thy womb.</string>
+    <string id="Ref2">Lk 1:42</string>
+    <string id="Quote3">And she brought forth her firstborn son, and wrapped him up in swaddling clothes, and laid him in a manger…</string>
+    <string id="Ref3">Lk 2:7</string>
+    <string id="Quote4">…my eyes have seen thy salvation, Which thou hast prepared before the face of all peoples…</string>
+    <string id="Ref4">Lk 2:30-31</string>
+    <string id="Quote5">And he said to them: How is it that you sought me? did you not know, that I must be about my father's business?</string>
+    <string id="Ref5">Lk 2:49</string>
 
-    <!-- Dolorosos -->
-    <string id="Quote6">«Padre, si quieres, aleja de mí este cáliz. Pero que no se haga mi voluntad, sino la tuya».</string>
-    <string id="Ref6">Lc 22, 42</string>
-    <string id="Quote7">Pilato mandó entonces azotar a Jesús.</string>
-    <string id="Ref7">Jn 19, 1</string>
-    <string id="Quote8">Los soldados tejieron una corona de espinas y se la pusieron sobre la cabeza.</string>
-    <string id="Ref8">Jn 19, 2</string>
-    <string id="Quote9">Jesús, cargando sobre sí la cruz, salió de la ciudad para dirigirse al lugar llamado «del Cráneo», en hebreo «Gólgota».</string>
-    <string id="Ref9">Jn 19, 17</string>
-    <string id="Quote10">Jesús, con un grito, exclamó: «Padre, en tus manos encomiendo mi espíritu». Y diciendo esto, expiró.</string>
-    <string id="Ref10">Lc 23, 46</string>
+    <!-- Sorrowful -->
+    <string id="Quote6">Father, if thou wilt, remove this chalice from me: but yet not my will, but thine be done.</string>
+    <string id="Ref6">Lk 22:42</string>
+    <string id="Quote7">Then therefore, Pilate took Jesus, and scourged him.</string>
+    <string id="Ref7">Jn 19:1</string>
+    <string id="Quote8">And the soldiers platting a crown of thorns, put it upon his head; and they put on him a purple garment.</string>
+    <string id="Ref8">Jn 19:2</string>
+    <string id="Quote9">And bearing his own cross, he went forth to that place which is called Calvary, but in Hebrew Golgotha.</string>
+    <string id="Ref9">Jn 19:17</string>
+    <string id="Quote10">And Jesus crying out with a loud voice, said: Father, into thy hands I commend my spirit. And saying this, he gave up the ghost.</string>
+    <string id="Ref10">Lk 23:46</string>
 
-    <!-- Gloriosos -->
-    <string id="Quote11">¿Por qué buscan entre los muertos al que está vivo? No está aquí, ha resucitado.</string>
-    <string id="Ref11">Lc 24, 5-6</string>
-    <string id="Quote12">Dicho esto, los Apóstoles lo vieron elevarse, y una nube lo ocultó de la vista de ellos.</string>
-    <string id="Ref12">Hch 1, 9</string>
-    <string id="Quote13">Todos quedaron llenos del Espíritu Santo, y comenzaron a hablar en distintas lenguas, según el Espíritu les permitía expresarse.</string>
-    <string id="Ref13">Hch 2, 4</string>
-    <string id="Quote14">En adelante todas las generaciones me llamarán feliz…</string>
-    <string id="Ref14">Lc 1, 48</string>
-    <string id="Quote15">Y apareció en el cielo un gran signo: una Mujer revestida del sol, con la luna bajo sus pies y una corona de doce estrellas en su cabeza.</string>
-    <string id="Ref15">Ap 12, 1</string>
+    <!-- Glorious -->
+    <string id="Quote11">Why seek you the living with the dead? He is not here, but is risen.</string>
+    <string id="Ref11">Lk 24:5-6</string>
+    <string id="Quote12">And when he had said these things, while they looked on, he was raised up: and a cloud received him out of their sight.</string>
+    <string id="Ref12">Acts 1:9</string>
+    <string id="Quote13">…And they were all filled with the Holy Ghost, and they began to speak with divers tongues, according as the Holy Ghost gave them to speak.</string>
+    <string id="Ref13">Acts 2:4</string>
+    <string id="Quote14">Because he hath regarded the humility of his handmaid; for behold from henceforth all generations shall call me blessed.</string>
+    <string id="Ref14">Lk 1:48</string>
+    <string id="Quote15">And a great sign appeared in heaven: A woman clothed with the sun, and the moon under her feet, and on her head a crown of twelve stars…</string>
+    <string id="Ref15">Apoc 12:1</string>
 
-    <!-- Luminosos -->
-    <string id="Quote16">Y se oyó una voz del cielo que decía: «Este es mi Hijo muy querido, en quien tengo puesta toda mi predilección».</string>
-    <string id="Ref16">Mt 3, 17</string>
-    <string id="Quote17">Pero su madre dijo a los sirvientes: «Hagan todo lo que él les diga».</string>
-    <string id="Ref17">Jn 2, 5</string>
-    <string id="Quote18">«El tiempo se ha cumplido: el Reino de Dios está cerca. Conviértanse y crean en la Buena Noticia».</string>
-    <string id="Ref18">Mc 1, 15</string>
-    <string id="Quote19">Entonces una nube los cubrió con su sombra, y salió de ella una voz: «Este es mi Hijo muy querido, escúchenlo».</string>
-    <string id="Ref19">Mc 9, 7</string>
-    <string id="Quote20">Esto es mi Cuerpo, que se entrega por ustedes. Hagan esto en memoria mía.</string>
-    <string id="Ref20">Lc 22, 19</string>
+    <!-- Luminous -->
+    <string id="Quote16">And behold a voice from heaven, saying: This is my beloved Son, in whom I am well pleased.</string>
+    <string id="Ref16">Mt 3:17</string>
+    <string id="Quote17">His mother saith to the waiters: Whatsoever he shall say to you, do ye.</string>
+    <string id="Ref17">Jn 2:5</string>
+    <string id="Quote18">The time is accomplished, and the kingdom of God is at hand: repent, and believe the gospel.</string>
+    <string id="Ref18">Mk 1:15</string>
+    <string id="Quote19">And there was a cloud overshadowing them: and a voice came out of the cloud, saying: This is my most beloved son; hear ye him.</string>
+    <string id="Ref19">Mk 9:6</string>
+    <string id="Quote20">This is my body, which is given for you. Do this for a commemoration of me.</string>
+    <string id="Ref20">Lk 22:19</string>
 </strings>

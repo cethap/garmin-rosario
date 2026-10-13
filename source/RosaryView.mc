@@ -27,7 +27,9 @@ module MainLayout {
     // fitTextToArea heights that allow 2 and 3 lines of the tiny font (it spaces them 26px apart).
     const TWO_LINES_HEIGHT = 52;
     const THREE_LINES_HEIGHT = 78;
-    // Current prayer, large, centered horizontally, from this top line.
+    // Current prayer, centered horizontally, from this top line, in the largest font whose line holds it
+    // (prayerFont): the large font, or a smaller one for a name too wide for it (English "Apostles' Creed",
+    // French "Je crois en Dieu"). Every Spanish label fits the large font.
     const PRAYER_TOP = 123;
     // Progress boxes (opening, 5 mysteries, closing), centered on this line.
     const BOXES_Y = 160;
@@ -67,18 +69,39 @@ module MainLayout {
         return Rosary.splitLines(Graphics.fitTextToArea(text, Graphics.FONT_TINY, width, height, true));
     }
 
+    // The prayer's font: the largest of large, medium and small whose line holds the label, else tiny. A
+    // taller font reaches lower rows, which the bezel narrows, so each has its own width (LayoutTests.mc
+    // checks every label against the visible area, and that no larger font would fit). The view measures
+    // once per step.
+    function prayerFont(dc as Dc, label as String) as Graphics.FontType {
+        var fonts = [Graphics.FONT_LARGE, Graphics.FONT_MEDIUM, Graphics.FONT_SMALL] as Array<Graphics.FontType>;
+        var widths = [136, 146, 152] as Array<Number>;
+        for (var i = 0; i < fonts.size(); i++) {
+            if (dc.getTextWidthInPixels(label, fonts[i]) <= widths[i]) {
+                return fonts[i];
+            }
+        }
+        return Graphics.FONT_TINY;
+    }
+
+    // The current prayer in its font, centered horizontally from PRAYER_TOP.
+    function prayerItem(prayer as String, font as Graphics.FontType) as Layout.TextItem {
+        return new Layout.TextItem(prayer, font, Layout.SCREEN_SIZE / 2, PRAYER_TOP, Graphics.TEXT_JUSTIFY_CENTER as Number);
+    }
+
     // Every text the screen draws for a step: the clock, the wrapped title and mystery, the current
-    // prayer (Rosary.prayerLabel) and, on an Avemaría, its number centered in the subscreen ring at
-    // (ringX, ringY).
+    // prayer (Rosary.prayerLabel, in prayerFont) and, on an Avemaría, its number centered in the subscreen
+    // ring at (ringX, ringY).
     function plan(step as Number, clockText as String, clockFont as Graphics.FontType, titleLines as Array<String>,
-        mysteryLines as Array<String>, prayer as String, ringX as Number, ringY as Number) as Array<Layout.TextItem> {
+        mysteryLines as Array<String>, prayer as String, prayerFont as Graphics.FontType, ringX as Number,
+        ringY as Number) as Array<Layout.TextItem> {
         var centerX = Layout.SCREEN_SIZE / 2;
         var center = Graphics.TEXT_JUSTIFY_CENTER as Number;
         var middle = (Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER) as Number;
         var items = [new Layout.TextItem(clockText, clockFont, CLOCK_X, CLOCK_Y, center)] as Array<Layout.TextItem>;
         addLines(items, titleLines, TITLE_X, TITLE_CENTER_Y, TITLE_PITCH);
         addLines(items, mysteryLines, centerX, MYSTERY_CENTER_Y, MYSTERY_PITCH);
-        items.add(new Layout.TextItem(prayer, Graphics.FONT_LARGE, centerX, PRAYER_TOP, center));
+        items.add(prayerItem(prayer, prayerFont));
         var index = Rosary.hailMaryIndex(step);
         if (index > 0) {
             items.add(new Layout.TextItem(index.format("%d"), Graphics.FONT_NUMBER_MILD, ringX, ringY, middle));
@@ -121,6 +144,8 @@ class RosaryView extends WatchUi.View {
     private var _titleLines as Array<String>;
     private var _mysteryLines as Array<String>;
     private var _prayer as String;
+    // The prayer's font, measured on the first draw of each step (MainLayout.prayerFont needs a Dc).
+    private var _prayerFont as Graphics.FontType?;
 
     function initialize(step as Number, set as Rosary.MysterySet) {
         View.initialize();
@@ -180,6 +205,7 @@ class RosaryView extends WatchUi.View {
         _titleLines = MainLayout.wrapTitle(Rosary.decadeTitle(step, mysterySet));
         _mysteryLines = MainLayout.wrapMystery(Rosary.subtitle(step, mysterySet));
         _prayer = Rosary.prayerLabel(step);
+        _prayerFont = null;
     }
 
     function onUpdate(dc as Dc) as Void {
@@ -190,8 +216,11 @@ class RosaryView extends WatchUi.View {
         drawRing(dc);
         var clock = System.getClockTime();
         var clockText = Rosary.formatClock(clock.hour, clock.min, System.getDeviceSettings().is24Hour);
+        if (_prayerFont == null) {
+            _prayerFont = MainLayout.prayerFont(dc, _prayer);
+        }
         var items = MainLayout.plan(step, clockText, _clockFont as FontResource, _titleLines, _mysteryLines, _prayer,
-            _ringX, _ringY);
+            _prayerFont as Graphics.FontType, _ringX, _ringY);
         for (var i = 0; i < items.size(); i++) {
             items[i].draw(dc);
         }

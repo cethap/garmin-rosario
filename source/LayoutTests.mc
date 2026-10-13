@@ -71,6 +71,18 @@ module ScreenArea {
         return describe(text, box) + " margin " + VisibleArea.marginOf(box, 9);
     }
 
+    // The system font's name, for logs and pins.
+    function fontName(font as Graphics.FontType) as String {
+        var fonts = [Graphics.FONT_XTINY, Graphics.FONT_TINY, Graphics.FONT_SMALL, Graphics.FONT_MEDIUM, Graphics.FONT_LARGE];
+        var names = ["xtiny", "tiny", "small", "medium", "large"];
+        for (var i = 0; i < fonts.size(); i++) {
+            if (fonts[i] == font) {
+                return names[i];
+            }
+        }
+        return font.toString();
+    }
+
     function farther(a as Float, b as Float) as Float {
         a = a < 0 ? -a : a;
         b = b < 0 ? -b : b;
@@ -207,6 +219,7 @@ function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var clockFont = WatchUi.loadResource(Rez.Fonts.PixelSmall) as FontResource;
     var ring = MainLayout.ring();
     var seen = {} as Dictionary<String, Boolean>;
+    var fonts = {} as Dictionary<String, Graphics.FontType>;
     var ok = true;
     for (var set = 0; set < 4; set++) {
         var titles = {} as Dictionary<Number, Array<String>>;
@@ -222,8 +235,12 @@ function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
                 ok = LayoutCheck.wrapsWhole(title, titles[decade] as Array<String>, 3, logger) && ok;
                 ok = LayoutCheck.wrapsWhole(mystery, mysteries[decade] as Array<String>, 2, logger) && ok;
             }
+            var prayer = Rosary.prayerLabel(step);
+            if (!fonts.hasKey(prayer)) {
+                fonts[prayer] = MainLayout.prayerFont(dc, prayer);
+            }
             var items = MainLayout.plan(step, "00:00", clockFont, titles[decade] as Array<String>,
-                mysteries[decade] as Array<String>, Rosary.prayerLabel(step), ring[0], ring[1]);
+                mysteries[decade] as Array<String>, prayer, fonts[prayer] as Graphics.FontType, ring[0], ring[1]);
             ok = LayoutCheck.blocksInOrder(dc, items, logger) && ok;
             for (var i = 0; i < items.size(); i++) {
                 ok = LayoutCheck.mainItemFits(dc, items[i], seen, logger) && ok;
@@ -249,15 +266,48 @@ function mainScreenClockStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var title = MainLayout.wrapTitle(Rosary.decadeTitle(0, Rosary.JOYFUL));
     var mystery = MainLayout.wrapMystery(Rosary.subtitle(0, Rosary.JOYFUL));
     var prayer = Rosary.prayerLabel(0);
+    var prayerFont = MainLayout.prayerFont(dc, prayer);
     var ok = true;
     for (var hour = 0; hour < 24; hour++) {
         for (var m = 0; m < minutes.size(); m++) {
             for (var mode = 0; mode < 2; mode++) {
                 var text = Rosary.formatClock(hour, minutes[m], mode == 0);
-                var items = MainLayout.plan(0, text, clockFont, title, mystery, prayer, ring[0], ring[1]);
+                var items = MainLayout.plan(0, text, clockFont, title, mystery, prayer, prayerFont, ring[0], ring[1]);
                 ok = LayoutCheck.mainItemFits(dc, items[0], seen, logger) && ok;
             }
         }
+    }
+    return ok;
+}
+
+// The current prayer takes the largest font that keeps it inside the visible area: every label of every
+// step, in the font MainLayout.prayerFont picks, fits with the 2px margin, and in each larger font it would
+// not. So a label steps down from the large font only when it is too wide for it.
+(:test)
+function prayerLabelUsesTheLargestFontThatFits(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var fonts = [Graphics.FONT_LARGE, Graphics.FONT_MEDIUM, Graphics.FONT_SMALL, Graphics.FONT_TINY] as Array<Graphics.FontType>;
+    var seen = {} as Dictionary<String, Boolean>;
+    var ok = true;
+    for (var step = 0; step <= Rosary.LAST_STEP; step++) {
+        var label = Rosary.prayerLabel(step);
+        if (seen.hasKey(label)) {
+            continue;
+        }
+        seen[label] = true;
+        var font = MainLayout.prayerFont(dc, label);
+        var box = ScreenArea.measure(dc, MainLayout.prayerItem(label, font));
+        var fits = ScreenArea.visible(box);
+        var largerFit = "";
+        for (var i = 0; i < fonts.size() && fonts[i] != font; i++) {
+            if (ScreenArea.visible(ScreenArea.measure(dc, MainLayout.prayerItem(label, fonts[i])))) {
+                largerFit += " " + ScreenArea.fontName(fonts[i]);
+            }
+        }
+        var right = fits && largerFit.length() == 0;
+        logger.debug((right ? "fits " : "WRONG ") + ScreenArea.fontName(font) + " " + ScreenArea.describeVisible(label, box)
+            + (largerFit.length() > 0 ? ", also fits" + largerFit : ""));
+        ok = ok && right;
     }
     return ok;
 }

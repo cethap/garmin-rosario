@@ -60,6 +60,19 @@ module TextPins {
         return actual.equals(expected);
     }
 
+    // The font of each label prayerLabels pins, as the main screen draws it (MainLayout.prayerFont),
+    // comma-joined: the large font unless the label is too wide for it.
+    function prayerFonts(logger as Logger, expected as String) as Boolean {
+        var dc = ScreenArea.measuringDc();
+        var steps = [0, 1, 3, 5, 13, 16, 17, 18, 71];
+        var actual = "";
+        for (var i = 0; i < steps.size(); i++) {
+            actual += (i > 0 ? "," : "") + ScreenArea.fontName(MainLayout.prayerFont(dc, Rosary.prayerLabel(steps[i])));
+        }
+        logger.debug("fonts=" + actual);
+        return actual.equals(expected);
+    }
+
     // The main screen's title at the opening, each decade (with its ordinal and the set's name) and the Salve.
     function decadeTitles(logger as Logger, expected as Array<String>) as Boolean {
         var actual = [Rosary.decadeTitle(3, Rosary.JOYFUL), Rosary.decadeTitle(6, Rosary.JOYFUL),
