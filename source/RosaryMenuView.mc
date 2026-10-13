@@ -20,6 +20,8 @@ module MenuLayout {
     const BAR_HEIGHT = 34;
     const BAR_PITCH = 38;
     const BAR_RADIUS = 4;
+    // The menu's background: the view clears the screen with it.
+    const BACKGROUND = Graphics.COLOR_BLACK;
 
     // Screen box [left, top, right, bottom] of item index's bar.
     function bar(index as Number) as Array<Number> {
@@ -33,6 +35,16 @@ module MenuLayout {
         var box = bar(index);
         return new Layout.TextItem(text, Graphics.FONT_LARGE, (box[0] + box[2]) / 2, (box[1] + box[3]) / 2,
             (Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER) as Number);
+    }
+
+    // Colours of item index while item selected is selected: [text, bar]. The selected item is inverted,
+    // black text on a white bar; any other item is white text straight on the black background, with no
+    // bar (Graphics.COLOR_TRANSPARENT).
+    function itemColors(index as Number, selected as Number) as Array<Number> {
+        if (index == selected) {
+            return [Graphics.COLOR_BLACK, Graphics.COLOR_WHITE] as Array<Number>;
+        }
+        return [Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT] as Array<Number>;
     }
 }
 
@@ -100,7 +112,7 @@ class RosaryMenuView extends WatchUi.View {
     }
 
     function onUpdate(dc as Dc) as Void {
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.setColor(Graphics.COLOR_WHITE, MenuLayout.BACKGROUND);
         dc.clear();
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         var ring = MainLayout.ring();
@@ -109,14 +121,13 @@ class RosaryMenuView extends WatchUi.View {
             header[i].draw(dc);
         }
         for (var i = 0; i < _labels.size(); i++) {
-            if (i == selected) {
+            var colors = MenuLayout.itemColors(i, selected);
+            if (colors[1] != Graphics.COLOR_TRANSPARENT) {
                 var bar = MenuLayout.bar(i);
-                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+                dc.setColor(colors[1], Graphics.COLOR_TRANSPARENT);
                 dc.fillRoundedRectangle(bar[0], bar[1], bar[2] - bar[0], bar[3] - bar[1], MenuLayout.BAR_RADIUS);
-                dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
-            } else {
-                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
             }
+            dc.setColor(colors[0], Graphics.COLOR_TRANSPARENT);
             MenuLayout.label(i, _labels[i]).draw(dc);
         }
     }

@@ -328,10 +328,14 @@ function readingFontHasEveryGlyph(logger as Logger) as Boolean {
 }
 
 // The reading view lays out and draws every mystery at every scroll position, clip included, and stays
-// small: each open view, measured on its own, holds less than ReadingCheck.MEMORY_BUDGET bytes.
+// small: each open view, measured on its own after one warm-up view, holds less than
+// ReadingCheck.MEMORY_BUDGET bytes.
 (:test)
 function readingViewDrawsEveryScrollPosition(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
+    // Warm-up: the first view measured also pays a one-time cost, so it is measured and left out. The
+    // bound then holds whichever test or view runs first.
+    var warmUp = ReadingCheck.memoryHeld(dc, Rosary.JOYFUL, 1);
     var held = [] as Array<Number>;
     var largest = 0;
     var drawn = 0;
@@ -351,8 +355,8 @@ function readingViewDrawsEveryScrollPosition(logger as Logger) as Boolean {
         }
     }
     var stats = System.getSystemStats();
-    logger.debug("drew " + drawn + " screens; largest open view " + largest + " bytes (budget " + ReadingCheck.MEMORY_BUDGET
-        + "); per mystery " + held + "; test app used " + stats.usedMemory + " of " + stats.totalMemory);
+    logger.debug("drew " + drawn + " screens; warm-up view " + warmUp + " bytes; largest open view " + largest + " bytes (budget "
+        + ReadingCheck.MEMORY_BUDGET + "); per mystery " + held + "; test app used " + stats.usedMemory + " of " + stats.totalMemory);
     return drawn >= 20 && largest > 0 && largest < ReadingCheck.MEMORY_BUDGET;
 }
 
@@ -405,11 +409,44 @@ function menuStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     return ok && large && first[3] < second[1];
 }
 
+// Only the selected menu item is inverted, at both selections: the selected one is black text on a white
+// bar, the other white text on the black background with no bar. So the two items always look different,
+// and every label contrasts with what lies under it (MenuLayout.itemColors, which the view draws with).
+(:test)
+function menuInvertsOnlyTheSelectedItem(logger as Logger) as Boolean {
+    var ok = MenuLayout.BACKGROUND == Graphics.COLOR_BLACK;
+    var looks = "";
+    for (var selected = 0; selected < MenuLayout.ITEM_COUNT; selected++) {
+        looks += " selected " + selected + ":";
+        for (var i = 0; i < MenuLayout.ITEM_COUNT; i++) {
+            var colors = MenuLayout.itemColors(i, selected);
+            var under = colors[1] == Graphics.COLOR_TRANSPARENT ? MenuLayout.BACKGROUND : colors[1];
+            var inverted = colors[0] == Graphics.COLOR_BLACK && colors[1] == Graphics.COLOR_WHITE;
+            var plain = colors[0] == Graphics.COLOR_WHITE && colors[1] == Graphics.COLOR_TRANSPARENT;
+            ok = ok && colors.size() == 2 && (i == selected ? inverted : plain) && colors[0] != under;
+            looks += " item " + i + " " + MenuCheck.colorName(colors[0]) + " on " + MenuCheck.colorName(under)
+                + (colors[1] == Graphics.COLOR_TRANSPARENT ? " (no bar)" : " bar");
+        }
+    }
+    logger.debug("background " + MenuCheck.colorName(MenuLayout.BACKGROUND) + ";" + looks);
+    return ok;
+}
+
 (:test)
 module MenuCheck {
 
     function box(rect as Array<Number>) as Array<Float> {
         return [rect[0].toFloat(), rect[1].toFloat(), rect[2].toFloat(), rect[3].toFloat()] as Array<Float>;
+    }
+
+    function colorName(color as Number) as String {
+        if (color == Graphics.COLOR_BLACK) {
+            return "black";
+        }
+        if (color == Graphics.COLOR_WHITE) {
+            return "white";
+        }
+        return color == Graphics.COLOR_TRANSPARENT ? "transparent" : color.format("%06X");
     }
 
     // The header text ends above the given row, so the bars never run into it.
@@ -437,11 +474,12 @@ module MenuCheck {
 module ReadingCheck {
 
     // Most memory one open reading view may hold, in bytes. A view holds its wrapped title and body lines
-    // (the one quote it loads is let go once wrapped): 616 to 880 bytes measured, and 1672 for the first
-    // view of a run, which also pays a one-time cost of about 800 bytes. 3072 leaves about 1.8x the largest
-    // for longer texts, yet catches a view that keeps every quote (the 20 quotes are 1909 bytes of UTF-8
-    // text; with that change every view measured 3072 to 4128), the cost R12 avoided by loading only the
-    // one being read. It is under 5% of the widget's 64KB.
+    // (the one quote it loads is let go once wrapped): 616 to 880 bytes measured. The first view a test
+    // measures also pays a one-time cost of about 800 bytes (1672 in all), so the test measures one warm-up
+    // view first and leaves it out. 3072 leaves about 3.5x the largest for longer texts, yet catches a view
+    // that keeps every quote (the 20 quotes are 1909 bytes of UTF-8 text; with that change every view
+    // measured 3072 to 4128, so it fails with or without the warm-up), the cost R12 avoided by loading only
+    // the one being read. It is under 5% of the widget's 64KB.
     const MEMORY_BUDGET = 3072;
 
     // Memory one reading view holds once laid out. The view is the only thing allocated in between and is
