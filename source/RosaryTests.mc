@@ -598,17 +598,22 @@ function readingLeavesTheProgressAndTheBeadAlone(logger as Logger) as Boolean {
         new RosaryDelegate(rosary, today).onSelect();
         var saved = app.loadProgress(today);
         var view = new MysteryView(rosary.mysterySet, Rosary.readingDecade(rosary.step));
-        view.onLayout(ScreenArea.measuringDc());
+        var dc = ScreenArea.measuringDc();
+        view.onLayout(dc);
         var reading = new MysteryDelegate(view);
         reading.onNextPage();
         reading.onNextPage();
         reading.onPreviousPage();
         reading.onMenu();
         var after = app.loadProgress(today);
-        logger.debug("saved=" + saved + " after=" + after + " step=" + rosary.step + " title=" + view.titleLines());
+        // The body opens with the 2nd mystery's name: its first line, wrapped as the view wraps it.
+        var name = Rosary.mysteryName(Rosary.JOYFUL, 2);
+        var firstLine = view.bodyLines()[0];
+        logger.debug("saved=" + saved + " after=" + after + " step=" + rosary.step + " title=" + view.titleLines()
+            + " first line='" + firstLine + "'");
         ok = saved == 31 && after == 31 && rosary.step == 31
             && view.titleLines().toString().equals(MainLayout.wrapTitle(Rosary.mysteryTitle(Rosary.JOYFUL, 2)).toString())
-            && Rosary.mysteryName(Rosary.JOYFUL, 2).find(view.bodyLines()[0]) == 0;
+            && firstLine.length() > 0 && name.find(firstLine) == 0 && firstLine.equals(ReadingLayout.wrapWords(dc, name)[0]);
     } finally {
         if (before == null) {
             Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
