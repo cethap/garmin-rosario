@@ -327,20 +327,21 @@ function readingFontHasEveryGlyph(logger as Logger) as Boolean {
     return ok;
 }
 
-// The reading view lays out and draws every mystery at every scroll position, clip included, and
-// stays small: the memory one open view holds (its wrapped lines and the one quote it loaded) is logged.
+// The reading view lays out and draws every mystery at every scroll position, clip included, and stays
+// small: each open view, measured on its own, holds less than ReadingCheck.MEMORY_BUDGET bytes.
 (:test)
 function readingViewDrawsEveryScrollPosition(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
+    var held = [] as Array<Number>;
     var largest = 0;
     var drawn = 0;
     for (var set = 0; set < 4; set++) {
         for (var decade = 1; decade <= Rosary.DECADES; decade++) {
-            var before = System.getSystemStats().usedMemory;
+            var bytes = ReadingCheck.memoryHeld(dc, set as Rosary.MysterySet, decade);
+            held.add(bytes);
+            largest = bytes > largest ? bytes : largest;
             var view = new MysteryView(set as Rosary.MysterySet, decade);
             view.onLayout(dc);
-            var held = System.getSystemStats().usedMemory - before;
-            largest = held > largest ? held : largest;
             var last = ReadingLayout.maxOffset(view.bodyLines().size());
             for (var offset = 0; offset <= last; offset++) {
                 view.offset = offset;
@@ -350,9 +351,9 @@ function readingViewDrawsEveryScrollPosition(logger as Logger) as Boolean {
         }
     }
     var stats = System.getSystemStats();
-    logger.debug("drew " + drawn + " screens; largest open view " + largest + " bytes; test app used "
-        + stats.usedMemory + " of " + stats.totalMemory);
-    return drawn >= 20;
+    logger.debug("drew " + drawn + " screens; largest open view " + largest + " bytes (budget " + ReadingCheck.MEMORY_BUDGET
+        + "); per mystery " + held + "; test app used " + stats.usedMemory + " of " + stats.totalMemory);
+    return drawn >= 20 && largest > 0 && largest < ReadingCheck.MEMORY_BUDGET;
 }
 
 // The hold-UP menu, drawn by the app because the system menu's text was too small for the user: both
@@ -434,6 +435,23 @@ module MenuCheck {
 
 (:test)
 module ReadingCheck {
+
+    // Most memory one open reading view may hold, in bytes. A view holds its wrapped title and body lines
+    // (the one quote it loads is let go once wrapped): 616 to 880 bytes measured, and 1672 for the first
+    // view of a run, which also pays a one-time cost of about 800 bytes. 3072 leaves about 1.8x the largest
+    // for longer texts, yet catches a view that keeps every quote (the 20 quotes are 1909 bytes of UTF-8
+    // text; with that change every view measured 3072 to 4128), the cost R12 avoided by loading only the
+    // one being read. It is under 5% of the widget's 64KB.
+    const MEMORY_BUDGET = 3072;
+
+    // Memory one reading view holds once laid out. The view is the only thing allocated in between and is
+    // let go on return, so no other view is counted or freed during the measurement.
+    function memoryHeld(dc as Dc, set as Rosary.MysterySet, decade as Number) as Number {
+        var before = System.getSystemStats().usedMemory;
+        var view = new MysteryView(set, decade);
+        view.onLayout(dc);
+        return System.getSystemStats().usedMemory - before;
+    }
 
     // The body window as a screen box [left, top, right, bottom].
     function window() as Array<Float> {
