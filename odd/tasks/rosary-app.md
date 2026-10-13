@@ -157,6 +157,8 @@ Out of scope for the MVP: liturgical-season variants (Advent or Lent Sundays), f
 - R14 memory: the reading test now measures each view on its own (`ReadingCheck.memoryHeld`: the view is the only allocation in between and is let go on return). Measured: 1672 bytes for the first view of the run, which also pays a one-time cost of about 800 bytes, and 616 to 880 for the others. Bound `MEMORY_BUDGET = 3072`: about 1.8x the largest, yet a view that keeps all 20 quotes (1909 bytes of UTF-8 text) measured 3072 to 4128 and fails.
 - R14 scroll: `ReadingLayout.prevOffset` returns the last whole window before the current first line, `(offset - 1) / 4 * 4`, so UP retraces DOWN's pages: 10 lines 6, 4, 0; 9 lines 5, 4, 0; 11 lines 7, 4, 0; 6, 7, 8 and 12 lines were already aligned.
 - R14/R15 verification: debug build 0 warnings; test build 0 warnings and `monkeydo -t` PASSED 50/50; release build (`-r`) 0 warnings, `Rosario.prg` 23948 bytes (20:51:00), up from 22716 with the custom menu. Not copied to the watch.
+- Sideloaded the release build of a4f3a9d (23.9KB) to the watch (`ROSARIO.PRG`, UUID checked, `cmp` verified, ejected); parent spot check: release build 0 warnings.
+- Review over `6f08ee3..a4f3a9d` (R14, R15 and their docs): **approved**, acknowledged (lineage `review-a8f40574330ff340`). Advisory suggestions, queued for the next batch: `R3-menu-inversion-unasserted` (move the selected bar and colours into a pure helper and test it) and `R3-memory-budget-order-dependent` (warm up one reading view before measuring, so the bound does not depend on test order).
 
 ## Next step
 
