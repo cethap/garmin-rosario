@@ -171,6 +171,7 @@ Out of scope for the MVP: liturgical-season variants (Advent or Lent Sundays), f
 - R17 memory: `readingViewDrawsEveryScrollPosition` measures one warm-up view (`JOYFUL`, decade 1) with the same Dc before the 20 measured ones and leaves it out. Measured: warm-up 1672 bytes, then 616 to 880 (largest 880, the 5th Glorious mystery). `MEMORY_BUDGET` stays 3072, now about 3.5x the largest; the R14 mutation (every view keeps all 20 quotes) measured 3072 to 4128 for every view, so it still fails with the warm-up.
 - R17 verification: debug build 0 warnings; test build 0 warnings and `monkeydo -t` PASSED 51/51; release build (`-r`) 0 warnings, `Rosario.prg` 24060 bytes (21:16:13), up from 23948 with the colour helper. Not copied to the watch.
 - R16 verification (after R17): debug build 0 warnings; test build 0 warnings and `monkeydo -t` PASSED 50/50; release build (`-r`) 0 warnings, `Rosario.prg` 24060 bytes (21:27:47). Not copied to the watch. One `monkeydo -t` run timed out at 180s with no output and left an idle `MonkeyDoDeux` client; the retry and the final run answered normally (identified by content: the 27px glance items).
+- Sideloaded the release build of 7076fc2 (R16, R17) to the watch (`ROSARIO.PRG`, UUID checked, `cmp` verified, ejected); parent spot check: release build 0 warnings. Review assessment over `a4f3a9d..7076fc2`: medium, `under_budget`, so the slice stays pending until a later commit reaches the delivery budget.
 
 ## Next step
 
