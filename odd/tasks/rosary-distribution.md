@@ -42,7 +42,7 @@ Out of scope: submitting to the Connect IQ Store, which needs the user's Garmin 
 
 | ID | Task | Route | Status |
 |----|------|-------|--------|
-| D1 | `refactor(i18n)`: move every user-facing string to string resources (base English placeholders, Spanish in `resources-spa`), with glance-scoped strings where the glance needs them; behavior and Spanish output unchanged; tests stay green | delegated writer (2+ non-trivial files) | [ ] |
+| D1 | `refactor(i18n)`: move every user-facing string to string resources, Spanish still in the base `resources` (D2 makes the base English and moves Spanish to `resources-spa`), with glance-scoped strings where the glance needs them; behavior and Spanish output unchanged; tests stay green | delegated writer (2+ non-trivial files) | [x] 6e1eb8c (+228/-117). 48 new string ids (52 in all). Pure refactor, so no RED step: the 50 existing tests were the safety net, and two mutation rounds showed that the reworked tests still catch errors (swapped menu labels and swapped mystery names: 47 passed, 3 failed; wrong mystery in the reading view: 48 passed, 2 failed). A one-off script compared all 48 moved or composed strings with the old constants: 0 differences. Debug and release `-w`: 0 warnings. Tests 50/50. Release 26,316 bytes (was 24,060). Glance in the simulator: 15720 -> 12504 bytes used of 28488 |
 | D2 | `feat(i18n)`: English strings and quotes; layout tests for every language | delegated writer | [ ] |
 | D3 | `feat(i18n)`: French strings and quotes | delegated writer | [ ] |
 | D4 | `chore(release)`: manifest languages, store texts, README, license, `.gitignore`, `.iq` export steps | delegated writer | [ ] |
@@ -63,7 +63,23 @@ Out of scope: submitting to the Connect IQ Store, which needs the user's Garmin 
 ## Progress
 
 - Feature document created.
+- D1 (6e1eb8c): every user-facing string is a resource. `strings.xml` holds the UI and `mysteries.xml` the 20 mystery names (`MysteryN`, N = `Rosary.mysteryIndex` + 1, like `QuoteN`). Composed texts are `Lang.format` templates: `PrayerNumber` "$1$ $2$" (Avemaría 7), `MysteryTitle` "$1$ Misterio $2$" (ordinal, set name in singular), `SetTitle` "Misterios $1$", `GlanceMystery` "Misterio $1$/$2$". `RosaryView` loads its prayer label once per step, as it already did for the title and the mystery name.
+- D1 glance: the glance strings (4 set names in plural, the 4 glance summaries, `PrayerSalve`) are `scope="glance"` (`doc/docs/Core_Topics/Resources.html`, "Resource Scopes", API 3.1.0). Measured in the simulator: when glance code looks up a foreground-only string, the glance crashes with "Symbol Not Found Error", and the compiler does not warn, even with `-w`. So `Rosary.mc` (the `(:glance)` module) looks up only glance strings and builds each lookup table inside its function. The labels only the full-screen widget shows continue the `Rosary` module in `source/RosaryLabels.mc`, which has no glance annotation (`:glance` marks code blocks, `doc/docs/Monkey_C/Annotations.html`), so their code stays out of the glance. The callers did not change.
+- D1 glance memory: instrumented copies printed `System.getSystemStats().usedMemory` in the glance's `onUpdate`; nothing instrumented was committed. Results: 15720 bytes at 32e97cf; 14456 with the strings moved but the labels still in the glance module; 12504 after the split, out of 28488. Debug `--build-stats` for the glance: data 2987 -> 2152 bytes, code 4406 -> 3730 bytes. The same instrumented glance loaded every text for the 4 sets at positions -1..72 with no crash, all in Spanish.
+- D1 tests: a test about a text itself pins the Spanish text, as before. That covers set names, mystery names, prayer labels, decade titles and ordinals, subtitles, glance summaries, menu titles and their wrap, the reset prompt and the quotes. A test where a text only shows which item is on screen now compares it with its resource: the glance after a reset, the menu labels, and the reading view's title and first line. The layout tests measure the loaded strings, including the real prayer label; the clock test now uses the real opening texts.
+- Finding for D2: the simulator runs in English (`systemLanguage == LANGUAGE_ENG`). Once the base is English, every Spanish-pinned test above fails in a plain test run.
+- Multi-language test strategy (research, measured in a scratch copy):
+  - No CLI control of the language. `monkeydo` and MonkeyDoDeux take only `-a/-d/-f/-n/-s/-t`. The simulator `shell` commands (`help`) have no language command. The language is only the simulator's Settings > Language menu (`setLanguageMenu` in the simulator binary). `monkeyc --help` has no language option.
+  - What works: a test-only jungle per language that appends the language folder to the base resources, `base.resourcePath = $(base.resourcePath);resources-spa` (`doc/docs/Reference_Guides/Jungle_Reference.html`: `resourcePath`, `lang`, `excludeAnnotations`). The later path wins: `resources;resources-spa` loaded "Inicio" and `resources-spa;resources` loaded "Start". `resources-fre` loaded "Début". So the whole suite, layout tests included, runs against each language's real strings on an English simulator.
+  - Per-language pins: annotate them `(:test :spa)` or `(:test :fre)` and exclude the other languages in each jungle (`base.excludeAnnotations = $(base.excludeAnnotations);fre`). Verified: the French build compiled out `spanishPin`, ran 52 tests, and `frenchPin` passed. The default English test build would need `spa;fre` excluded too.
+  - Bonus: with `-w`, the compiler warns for each string a language leaves out ("String id 'X' undefined for language 'spa'"). A 0-warnings build therefore proves every translation is complete.
+  - Alternatives:
+    - A generated test-only table of every language's strings, plus a sync check. One run covers every language, but it needs a generator script, the strings exist twice, and the views would have to take injected strings instead of loading resources.
+    - Switching the simulator language by hand before each run. Not scriptable.
+    - Gating on `DeviceSettings.systemLanguage` (API 3.1.0). Only useful with the manual switch, since the jungle override does not change it.
+  - Recommendation: per-language test jungles plus per-language pin annotations. Cost: one test build and one test run per language.
+- Follow-up for D4: README's Project Layout table does not list `source/RosaryLabels.mc` or `resources/strings/mysteries.xml` (README is outside D1's edit surface).
 
 ## Next step
 
-D1 delegated. The user chooses the Bible translations for English and French.
+D2: English base strings and Spanish in `resources-spa`, with the per-language test jungles above. The user chooses the Bible translations for English and French.
