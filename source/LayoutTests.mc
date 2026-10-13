@@ -20,19 +20,6 @@ module ScreenArea {
     const GLANCE_X = 9;
     const GLANCE_Y = 19;
     const GLANCE_WIDTH = 164;
-    // Screen position of the glance content area in the slot under the selected one. The system
-    // places it; this is an estimate from the user's two simulator screenshots: the first glance
-    // (title top at dc 7, x 0) lost about 3px of its first letter to the round edge, and the second
-    // (title baseline at dc 40) touched the bottom bezel. Only dc rows 0..~40 are on screen there,
-    // so only the first line can show.
-    const GLANCE_LOWER_X = 9;
-    const GLANCE_LOWER_Y = 135;
-    // Margin the first line keeps in that slot. The shared indent that fits "Luminosos" in the
-    // selected slot (dc x 9) puts every set name's box at screen x 18, which is the visible edge on
-    // row 158, the bottom of the box: margin 0. The box is conservative there: no set name has a
-    // descender, so the glyphs end at the baseline (row 152, visible from x 12).
-    const GLANCE_LOWER_MARGIN = 0;
-
     function measuringDc() as Dc {
         return new Graphics.BufferedBitmap({:width => SIZE, :height => SIZE}).getDc();
     }
@@ -141,22 +128,56 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     return ok;
 }
 
-// In the slot under the selected one (position estimated from the user's screenshots, see
-// ScreenArea.GLANCE_LOWER_Y) only the first line of the glance is on screen: the set name must
-// show whole there, for every set.
+// The two glance lines read as one block: the status stays at the bottom of the slot (dc y 39) and the
+// set name sits right above it, 19 to 21px between the line tops, both tiny at the shared indent.
 (:test)
-function glanceTitleStaysVisibleInTheLowerSlot(logger as Logger) as Boolean {
-    var dc = ScreenArea.measuringDc();
+function glanceLinesReadAsOneBlock(logger as Logger) as Boolean {
     var ok = true;
+    var bottom = Layout.GLANCE_HEIGHT - Graphics.getFontHeight(Graphics.FONT_TINY);
     for (var set = 0; set < 4; set++) {
-        var item = Layout.glancePlan(set as Rosary.MysterySet, Rosary.NOT_STARTED, Layout.GLANCE_HEIGHT)[0];
-        var box = ScreenArea.measure(dc, item);
-        var screen = ScreenArea.offset(box, ScreenArea.GLANCE_LOWER_X, ScreenArea.GLANCE_LOWER_Y);
-        var fits = item.text.equals(Rosary.glanceTitle(set as Rosary.MysterySet))
-            && ScreenArea.boxInRect(box, 0, 0, ScreenArea.GLANCE_WIDTH, Layout.GLANCE_HEIGHT)
-            && VisibleArea.boxFits(screen, ScreenArea.GLANCE_LOWER_MARGIN);
-        logger.debug((fits ? "fits " : "OUT ") + ScreenArea.describeVisible(item.text, screen));
-        ok = ok && fits;
+        var items = Layout.glancePlan(set as Rosary.MysterySet, 20, Layout.GLANCE_HEIGHT);
+        var pitch = items[1].y - items[0].y;
+        logger.debug(items[0].text + " at dc y " + items[0].y + ", " + items[1].text + " at dc y " + items[1].y + ", pitch " + pitch);
+        ok = ok && items.size() == 2 && items[1].y == 39 && bottom == 39 && pitch >= 19 && pitch <= 21
+            && items[0].x == Layout.GLANCE_LEFT && items[1].x == Layout.GLANCE_LEFT
+            && items[0].font == Graphics.FONT_TINY && items[1].font == Graphics.FONT_TINY;
+    }
+    return ok;
+}
+
+// The tiny font is the largest system font that fits the glance beside the subscreen lens: drawn at
+// the same places with the small or the medium font, some set name or status leaves the visible area.
+(:test)
+function glanceLargerFontsDoNotFit(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var fonts = [Graphics.FONT_SMALL, Graphics.FONT_MEDIUM];
+    var names = ["small", "medium"];
+    var ok = true;
+    for (var f = 0; f < fonts.size(); f++) {
+        var font = fonts[f] as Graphics.FontType;
+        var out = 0;
+        var worst = "";
+        var seen = {} as Dictionary<String, Boolean>;
+        for (var set = 0; set < 4; set++) {
+            for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
+                var items = Layout.glancePlan(set as Rosary.MysterySet, position, Layout.GLANCE_HEIGHT);
+                for (var i = 0; i < items.size(); i++) {
+                    var y = i == 0 ? items[0].y : Layout.GLANCE_HEIGHT - Graphics.getFontHeight(font);
+                    var item = new Layout.TextItem(items[i].text, font, items[i].x, y, items[i].justify);
+                    if (seen.hasKey(item.text)) {
+                        continue;
+                    }
+                    seen[item.text] = true;
+                    var screen = ScreenArea.offset(ScreenArea.measure(dc, item), ScreenArea.GLANCE_X, ScreenArea.GLANCE_Y);
+                    if (!ScreenArea.visible(screen)) {
+                        out++;
+                        worst += " " + ScreenArea.describeVisible(item.text, screen);
+                    }
+                }
+            }
+        }
+        logger.debug(names[f] + " font (" + Graphics.getFontHeight(font) + "px): " + out + " of " + seen.size() + " labels out:" + worst);
+        ok = ok && out > 0;
     }
     return ok;
 }

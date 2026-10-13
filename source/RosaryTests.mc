@@ -344,7 +344,7 @@ function glanceShowsTheDaySetAndProgress(logger as Logger) as Boolean {
     }
     logger.debug("title=" + title + " summaries=" + actual);
     return title.equals("Gozosos") && Rosary.NOT_STARTED == -1
-        && actual.equals("Sin empezar,Inicio,Inicio,Misterio 1/5,Misterio 2/5,Misterio 5/5,Salve,Completado");
+        && actual.equals("Sin empezar,En progreso,En progreso,Misterio 1/5,Misterio 2/5,Misterio 5/5,Salve,Completado");
 }
 
 // The day's progress is one stored value, [YYYYMMDD, position], that decodes back to the position

@@ -15,7 +15,7 @@ A fast Connect IQ widget that guides the Rosary bead by bead on the Garmin Insti
   - **Reiniciar**: start over after the confirmation "¿Reiniciar el rosario?". YES clears today's progress (the glance reads "Sin empezar" again) and goes back to the Credo with one short pulse; NO changes nothing.
 - **Reading view**: the mystery's title stays at the top left, beside the subscreen, and its number shows in the subscreen. Below the subscreen, the mystery's name, a short Bible quote and its reference ("Lc 1, 28") scroll in a fixed window, so no text ever runs under the subscreen ring. Every quote reads in three screens at most. Reading changes nothing: no vibration, and the progress and the current bead stay as they were.
 - **Bible quotes**: copied word for word from the Spanish Catholic Bible on the Holy See's site, "La Biblia – El Libro del Pueblo de Dios" (https://www.vatican.va/archive/ESL0506/_INDEX.HTM). A "…" marks a quote that starts or ends inside a sentence. The quotes live in `resources/strings/quotes.xml`, and only the one being read is loaded.
-- **Glance**: the day's mysteries and today's progress ("Gozosos" over "Sin empezar", "Inicio", "Misterio 2/5", "Salve" or "Completado"). "Completado" appears once the Salve is prayed.
+- **Glance**: the day's mysteries right above today's progress, as one block ("Gozosos" over "Sin empezar", "En progreso", "Misterio 2/5", "Salve" or "Completado"). "En progreso" covers the opening (Credo to the first Gloria); "Completado" appears once the Salve is prayed. The system's rosary icon stays in the subscreen next to it.
 
 ## Controls
 

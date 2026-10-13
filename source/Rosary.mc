@@ -336,8 +336,9 @@ module Rosary {
         return setNamePlural(set);
     }
 
-    // Today's progress from the saved position: "Sin empezar" (NOT_STARTED), "Inicio" (opening, also a
-    // day moved back to the Credo), "Misterio 2/5", "Salve" until it is prayed, "Completado" (DONE).
+    // Today's progress from the saved position: "Sin empezar" (NOT_STARTED), "En progreso" (opening, also
+    // a day moved back to the Credo; "Inicio" read as not started), "Misterio 2/5", "Salve" until it is
+    // prayed, "Completado" (DONE).
     function glanceSummary(position as Number) as String {
         if (position < 0) {
             return "Sin empezar";
@@ -350,7 +351,7 @@ module Rosary {
         }
         var decade = decadeAt(position);
         if (decade == 0) {
-            return "Inicio";
+            return "En progreso";
         }
         return "Misterio " + decade.format("%d") + "/" + DECADES.format("%d");
     }
