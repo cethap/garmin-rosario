@@ -65,11 +65,16 @@ monkeyc -f monkey.jungle -d instinct2 -o bin/Rosario.prg -y /path/to/developer_k
 
 The rosary logic in `source/Rosary.mc` is pure and covered by Run No Evil tests in `source/RosaryTests.mc`. `source/LayoutTests.mc` measures every text the glance, the main screen, the menu and the reading view draw with the real fonts and checks it against the visible area of the Instinct 2, the same per-row limits the watch face was calibrated with (`source/VisibleArea.mc`). Tests are excluded from regular builds.
 
+The tests run once per language, each suite against that language's own strings:
+
 ```sh
-monkeyc -f monkey.jungle -d instinct2 -o bin/RosarioTest.prg -y /path/to/developer_key -w -t
 connectiq &
-monkeydo bin/RosarioTest.prg instinct2 -t
+DEVELOPER_KEY=/path/to/developer_key.der scripts/test-all.sh
 ```
+
+The script prints one line per language, for example `spa PASSED (passed=50, failed=0, errors=0)`, and exits with 0 only when every suite passes. Pass languages to run only those (`scripts/test-all.sh spa`). It needs Java 17 or later on the `PATH`; it finds the SDK chosen in the SDK Manager, or set `CIQ_SDK`. Builds and logs go to `bin/test` (`TEST_OUT`).
+
+How it works: the simulator runs in English and cannot switch its language from the command line, so each `test-<lang>.jungle` puts that language's strings over the base ones. Tests that pin a text word for word live in `source/Pins<Lang>.mc`, annotated with their language, and each suite leaves out the other languages' pins. Every build uses `-w`, and a warning fails the suite, because a string a translation leaves out shows up as one. A run that hangs is stopped after `TEST_TIMEOUT` seconds (default 180), with the client it started, and tried once more.
 
 ### Run in the Simulator
 

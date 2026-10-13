@@ -4,9 +4,10 @@ import Toybox.Test;
 import Toybox.WatchUi;
 
 // Run No Evil unit tests for the Rosary module. They are excluded from debug and release
-// executables; run them with a unit-test build in the simulator (monkeydo <prg> instinct2 -t).
-// A test about a text itself (a label, a title, a name) pins the Spanish text; a test where a text only
-// shows which item is on screen compares it with its string resource (Rosary.loadText).
+// executables; scripts/test-all.sh builds and runs them once per language in the simulator.
+// A test about a text itself (a label, a title, a name) pins it in each language: those tests live in
+// Pins<Lang>.mc, with their checks in TextPins.mc. A test where a text only shows which item is on screen
+// compares it with its string resource (Rosary.loadText), so it holds in every language.
 
 (:test)
 function sequenceHasSeventyTwoStepsEndingInSalve(logger as Logger) as Boolean {
@@ -99,86 +100,6 @@ function mysterySetFollowsTheWeekday(logger as Logger) as Boolean {
     logger.debug("sets=" + actual);
     var expected = [Rosary.GLORIOUS, Rosary.JOYFUL, Rosary.SORROWFUL, Rosary.GLORIOUS, Rosary.LUMINOUS, Rosary.SORROWFUL, Rosary.JOYFUL];
     return actual.toString().equals(expected.toString());
-}
-
-(:test)
-function setNamesArePluralAndSingular(logger as Logger) as Boolean {
-    var plural = Rosary.setNamePlural(Rosary.JOYFUL) + "," + Rosary.setNamePlural(Rosary.SORROWFUL) + ","
-        + Rosary.setNamePlural(Rosary.GLORIOUS) + "," + Rosary.setNamePlural(Rosary.LUMINOUS);
-    var singular = Rosary.setNameSingular(Rosary.JOYFUL) + "," + Rosary.setNameSingular(Rosary.SORROWFUL) + ","
-        + Rosary.setNameSingular(Rosary.GLORIOUS) + "," + Rosary.setNameSingular(Rosary.LUMINOUS);
-    logger.debug("plural=" + plural + " singular=" + singular);
-    return plural.equals("Gozosos,Dolorosos,Gloriosos,Luminosos") && singular.equals("Gozoso,Doloroso,Glorioso,Luminoso");
-}
-
-(:test)
-function mysteryNamesCoverEverySet(logger as Logger) as Boolean {
-    var joyful = Rosary.mysteryName(Rosary.JOYFUL, 1);
-    var sorrowful = Rosary.mysteryName(Rosary.SORROWFUL, 5);
-    var glorious = Rosary.mysteryName(Rosary.GLORIOUS, 3);
-    var luminous = Rosary.mysteryName(Rosary.LUMINOUS, 2);
-    var opening = Rosary.mysteryName(Rosary.JOYFUL, 0);
-    var closing = Rosary.mysteryName(Rosary.JOYFUL, 6);
-    logger.debug(joyful + " | " + sorrowful + " | " + glorious + " | " + luminous + " | '" + opening + "' | '" + closing + "'");
-    return joyful.equals("La Anunciación del Ángel a María")
-        && sorrowful.equals("La Crucifixión y Muerte de Jesús")
-        && glorious.equals("La Venida del Espíritu Santo")
-        && luminous.equals("Las Bodas de Caná")
-        && opening.equals("") && closing.equals("");
-}
-
-(:test)
-function lastMysteryOfEachSetIsCorrect(logger as Logger) as Boolean {
-    var joyful = Rosary.mysteryName(Rosary.JOYFUL, 5);
-    var sorrowful = Rosary.mysteryName(Rosary.SORROWFUL, 1);
-    var glorious = Rosary.mysteryName(Rosary.GLORIOUS, 5);
-    var luminous = Rosary.mysteryName(Rosary.LUMINOUS, 5);
-    logger.debug(joyful + " | " + sorrowful + " | " + glorious + " | " + luminous);
-    return joyful.equals("El Niño Jesús perdido y hallado en el Templo")
-        && sorrowful.equals("La Oración de Jesús en el Huerto")
-        && glorious.equals("La Coronación de María como Reina")
-        && luminous.equals("La Institución de la Eucaristía");
-}
-
-(:test)
-function subtitleShowsTheMysteryOrTheDaySet(logger as Logger) as Boolean {
-    var opening = Rosary.subtitle(0, Rosary.SORROWFUL);
-    var second = Rosary.subtitle(20, Rosary.SORROWFUL);
-    var closing = Rosary.subtitle(71, Rosary.LUMINOUS);
-    logger.debug(opening + " | " + second + " | " + closing);
-    return opening.equals("Misterios Dolorosos")
-        && second.equals("La Flagelación del Señor")
-        && closing.equals("Misterios Luminosos");
-}
-
-(:test)
-function prayerLabelNamesTheCurrentBead(logger as Logger) as Boolean {
-    var steps = [0, 1, 3, 5, 13, 16, 17, 18, 71];
-    var actual = "";
-    for (var i = 0; i < steps.size(); i++) {
-        actual += (i > 0 ? "," : "") + Rosary.prayerLabel(steps[i]);
-    }
-    logger.debug("labels=" + actual);
-    return actual.equals("Credo,Padre Nuestro,Avemaría 2,Gloria,Avemaría 7,Avemaría 10,Gloria,Oh Jesús mío,Salve");
-}
-
-(:test)
-function decadeTitleUsesSpanishOrdinals(logger as Logger) as Boolean {
-    var opening = Rosary.decadeTitle(3, Rosary.JOYFUL);
-    var first = Rosary.decadeTitle(6, Rosary.JOYFUL);
-    var second = Rosary.decadeTitle(19, Rosary.SORROWFUL);
-    var third = Rosary.decadeTitle(32, Rosary.GLORIOUS);
-    var fourth = Rosary.decadeTitle(45, Rosary.LUMINOUS);
-    var fifth = Rosary.decadeTitle(70, Rosary.LUMINOUS);
-    var closing = Rosary.decadeTitle(71, Rosary.LUMINOUS);
-    logger.debug(opening + " | " + first + " | " + second + " | " + third + " | " + fourth + " | " + fifth + " | " + closing);
-    return opening.equals("Inicio")
-        && first.equals("1er Misterio Gozoso")
-        && second.equals("2do Misterio Doloroso")
-        && third.equals("3er Misterio Glorioso")
-        && fourth.equals("4to Misterio Luminoso")
-        && fifth.equals("5to Misterio Luminoso")
-        && closing.equals("Final");
 }
 
 // Next goes one past the Salve, to the finished rosary (DONE), and stops there; prev from DONE goes
@@ -332,21 +253,6 @@ function beadAndEndVibrationsKeepTheirPulse(logger as Logger) as Boolean {
     logger.debug("none=" + none + " bead=" + bead + " end=" + end);
     return none.size() == 0 && bead.toString().equals("[[50, 100]]") && end.toString().equals("[[100, 1000]]")
         && VibeCheck.playable(bead) && VibeCheck.playable(end);
-}
-
-// A day not started (-1) differs from one started and moved back to the Credo (0); the Salve reads
-// "Salve" until it is prayed, and only the finished rosary (DONE) reads "Completado".
-(:test)
-function glanceShowsTheDaySetAndProgress(logger as Logger) as Boolean {
-    var title = Rosary.glanceTitle(Rosary.JOYFUL);
-    var positions = [Rosary.NOT_STARTED, 0, 3, 6, 20, 70, 71, Rosary.DONE];
-    var actual = "";
-    for (var i = 0; i < positions.size(); i++) {
-        actual += (i > 0 ? "," : "") + Rosary.glanceSummary(positions[i]);
-    }
-    logger.debug("title=" + title + " summaries=" + actual);
-    return title.equals("Gozosos") && Rosary.NOT_STARTED == -1
-        && actual.equals("Sin empezar,En progreso,En progreso,Misterio 1/5,Misterio 2/5,Misterio 5/5,Salve,Completado");
 }
 
 // The day's progress is one stored value, [YYYYMMDD, position], that decodes back to the position
@@ -506,49 +412,6 @@ function resetStartsTodayOverOnlyWhenConfirmed(logger as Logger) as Boolean {
     return ok;
 }
 
-(:test)
-function resetPromptIsInSpanish(logger as Logger) as Boolean {
-    var prompt = WatchUi.loadResource(Rez.Strings.ResetPrompt) as String;
-    logger.debug("prompt=" + prompt);
-    return prompt.equals("¿Reiniciar el rosario?");
-}
-
-// "Leer misterio" reads the current mystery: the first, the one coming next, during the opening;
-// mystery n during decade n; the fifth on the Salve and once the rosary is done.
-(:test)
-function readingFollowsTheCurrentMystery(logger as Logger) as Boolean {
-    var positions = [0, 5, 6, 18, 19, 44, 57, 58, 70, 71, Rosary.DONE];
-    var actual = [];
-    for (var i = 0; i < positions.size(); i++) {
-        actual.add(Rosary.readingDecade(positions[i]));
-    }
-    var first = Rosary.mysteryTitle(Rosary.JOYFUL, 1);
-    var third = Rosary.mysteryTitle(Rosary.SORROWFUL, 3);
-    var fifth = Rosary.mysteryTitle(Rosary.LUMINOUS, 5);
-    logger.debug("decades=" + actual + " titles=" + first + " | " + third + " | " + fifth);
-    return actual.toString().equals([1, 1, 1, 1, 2, 3, 4, 5, 5, 5, 5].toString())
-        && first.equals("1er Misterio Gozoso") && third.equals("3er Misterio Doloroso") && fifth.equals("5to Misterio Luminoso")
-        && first.equals(Rosary.decadeTitle(6, Rosary.JOYFUL));
-}
-
-// Hold UP opens the app's own menu: the title of the mystery "Leer misterio" reads (the 1st during the
-// opening, the n-th during decade n, the 5th on the Salve), over "Leer misterio", selected first, and
-// "Reiniciar".
-(:test)
-function menuOffersReadingTheMysteryAndRestarting(logger as Logger) as Boolean {
-    var opening = new RosaryMenuView(Rosary.JOYFUL, Rosary.readingDecade(0));
-    var second = new RosaryMenuView(Rosary.GLORIOUS, Rosary.readingDecade(20));
-    var salve = new RosaryMenuView(Rosary.SORROWFUL, Rosary.readingDecade(Rosary.LAST_STEP));
-    var labels = opening.labels();
-    logger.debug("labels=" + labels + " selected=" + opening.selected + " id=" + opening.selectedId()
-        + " titles=" + opening.titleLines() + " | " + second.title() + " | " + salve.title());
-    return labels.size() == MenuLayout.ITEM_COUNT && labels[0].equals(Rosary.loadText(Rez.Strings.MenuRead))
-        && labels[1].equals(Rosary.loadText(Rez.Strings.MenuReset))
-        && opening.selected == 0 && opening.selectedId() == :read
-        && opening.title().equals("1er Misterio Gozoso") && opening.titleLines().toString().equals(["1er", "Misterio", "Gozoso"].toString())
-        && second.title().equals("2do Misterio Glorioso") && salve.title().equals("5to Misterio Doloroso");
-}
-
 // In the menu DOWN and UP move the selection and stop at either end (no wrap-around), and hold UP does
 // nothing; none of them opens anything. BACK closes the menu and nothing else, so the rosary is back on
 // the same bead.
@@ -635,28 +498,6 @@ module MenuFake {
         var handled = delegate.onSelect();
         return [handled, label, rosary.calls];
     }
-}
-
-// Each of the 20 mysteries has its own quote, loaded from the resources with its reference, in
-// Rosary.mysteryIndex order. The first and the last are pinned word for word.
-(:test)
-function everyMysteryHasItsBibleQuote(logger as Logger) as Boolean {
-    var expected = ["Lc 1, 28", "Lc 1, 42", "Lc 2, 7", "Lc 2, 30-31", "Lc 2, 49",
-        "Lc 22, 42", "Jn 19, 1", "Jn 19, 2", "Jn 19, 17", "Lc 23, 46",
-        "Lc 24, 5-6", "Hch 1, 9", "Hch 2, 4", "Lc 1, 48", "Ap 12, 1",
-        "Mt 3, 17", "Jn 2, 5", "Mc 1, 15", "Mc 9, 7", "Lc 22, 19"];
-    var refs = "";
-    var ok = true;
-    for (var i = 0; i < expected.size(); i++) {
-        var reference = Quotes.reference(i);
-        refs += (i > 0 ? "; " : "") + reference;
-        ok = ok && reference.equals(expected[i]) && Quotes.text(i).length() > 0;
-    }
-    var annunciation = Quotes.text(Rosary.mysteryIndex(Rosary.JOYFUL, 1));
-    var eucharist = Quotes.text(Rosary.mysteryIndex(Rosary.LUMINOUS, 5));
-    logger.debug("refs=" + refs + " | " + annunciation + " | " + eucharist);
-    return ok && annunciation.equals("El Angel entró en su casa y la saludó, diciendo: «¡Alégrate!, llena de gracia, el Señor está contigo».")
-        && eucharist.equals("Esto es mi Cuerpo, que se entrega por ustedes. Hagan esto en memoria mía.");
 }
 
 // In the reading view DOWN and UP scroll a window of lines at a time. UP on the first line and DOWN on
