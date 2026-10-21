@@ -50,7 +50,7 @@ Out of scope: a phone-side setting in Garmin Connect, other languages, other dev
 | L1 | Research: how to load any language's strings at run time, measured in a scratch copy only. Compare per-language string ids in the base resources with per-language JSON resources, by memory in the widget and the glance, speed and test cost. Also confirm the glance can read the saved choice | delegated research worker (more than 5 lookups plus a prototype) | [x] No commit, research only; prototypes under the session scratchpad. Result: Design B, per-language `jsonData` arrays (see Progress) |
 | L2 | `refactor(i18n)`: load every text through a language-aware lookup that follows the watch language (Automatic); outputs unchanged; tests cover all three languages | delegated writer (2+ non-trivial files) | [x] 077c042 (see Progress) |
 | L3 | `feat(menu)`: language item in the hold-UP menu, a picker view, the saved choice, the glance honoring it | delegated writer (2+ non-trivial files) | [x] 67a727f (see Progress) |
-| L4 | `docs`: README, store listings and release notes for the option | delegated writer | [ ] |
+| L4 | `docs`: README, store listings and release notes for the option | delegated writer (5 files) | [x] e9e1784 (see Progress) |
 
 ## Acceptance criteria
 
@@ -120,6 +120,17 @@ Out of scope: a phone-side setting in Garmin Connect, other languages, other dev
     - Widget, the main view plus the open picker: at most 27,216. Plus the largest reading view: at most 27,584 (Spanish). That includes the 2,128 bytes of new code, which stays resident. Before the feature: 27,264.
   - **Size:** 826 authored lines and 16 generated.
 
+- L4 done in e9e1784 (delegated writer):
+  - **README:** the Language item in the features, a Languages section on Automatic and the picker, the picker's controls, a Translations section, the single test build with its three steps, the Project Layout tables, and the Spanish and French summaries.
+  - **Store listings:** the option, in each language.
+  - **`docs/RELEASE.md`:** the test step's new output; a missing translation is caught by the translations check, not by compiler warnings; the language picker added to the screenshots; the package is now about 28 KB.
+- Final checks on the code of e9e1784, which the commit recording them does not change:
+  - Debug `-w` and release `-r -w` (36,332 bytes): 0 warnings.
+  - `monkeyc -e -r -w`: BUILD SUCCESSFUL, 28,710 bytes, with only the known warning about part 006-B4071-00. The package declares eng, fre and spa, and no permissions.
+  - Glance: 11,568 of 28,488 with Automatic on the English watch, and the same with Spanish, French or English forced. The glance read in the saved language each time.
+  - Widget at its peak, the main view plus the largest reading view: 27,584 (Spanish).
+  - `scripts/test-all.sh`: see the last commit's report.
+
 ## Next step
 
-L4: the README, the store listings and the release notes.
+The user checks the language option on the watch. Then push and open the pull request, the user's decision under the `single-pr` strategy.
