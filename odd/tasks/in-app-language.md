@@ -48,7 +48,7 @@ Out of scope: a phone-side setting in Garmin Connect, other languages, other dev
 | ID | Task | Route | Status |
 |----|------|-------|--------|
 | L1 | Research: how to load any language's strings at run time, measured in a scratch copy only. Compare per-language string ids in the base resources with per-language JSON resources, by memory in the widget and the glance, speed and test cost. Also confirm the glance can read the saved choice | delegated research worker (more than 5 lookups plus a prototype) | [x] No commit, research only; prototypes under the session scratchpad. Result: Design B, per-language `jsonData` arrays (see Progress) |
-| L2 | `refactor(i18n)`: load every text through a language-aware lookup that follows the watch language (Automatic); outputs unchanged; tests cover all three languages | delegated writer | [ ] |
+| L2 | `refactor(i18n)`: load every text through a language-aware lookup that follows the watch language (Automatic); outputs unchanged; tests cover all three languages | delegated writer (2+ non-trivial files) | [x] 077c042 (see Progress) |
 | L3 | `feat(menu)`: language item in the hold-UP menu, a picker view, the saved choice, the glance honoring it | delegated writer | [ ] |
 | L4 | `docs`: README, store listings and release notes for the option | delegated writer | [ ] |
 
@@ -90,6 +90,23 @@ Out of scope: a phone-side setting in Garmin Connect, other languages, other dev
     - Splitting the quotes table per mystery set keeps every load small.
     - The cached language must be reset when the user picks a new one.
 
+- L2 done in 077c042 (delegated writer):
+  - **Sources:** `i18n/<lang>.json`, keyed by table and id; keys starting with `//` are translator notes. `scripts/gen-i18n.py` writes `resources/i18n/<lang>.xml`, with inline `jsonData` arrays and a "do not edit" comment (a JSON file cannot hold one), and `source/I18nKeys.mc`. Its `--check` fails on a missing or empty text, an extra id, an added placeholder or a stale generated file. Seven tables per language: glance (`scope="glance"`), ui, mysteries and one quotes table per mystery set.
+  - **Lookup:** `source/I18n.mc`. `resolve(choice, systemLanguage)` is the pure function. The language is cached until `reset()`, which the glance calls on each refresh. `glanceText` is the only lookup the glance makes. `text` loads any table, and `saveChoice` writes Storage key `language`. Only `AppName` stays a string resource. `resources-spa/`, `resources-fre/` and the `test-<lang>.jungle` files are gone, and `NOTICE` names the new quote files.
+  - **Tests:** one test build. The pins are named `<test>Eng`, `<test>Spa` and `<test>Fre`. Every test that reads a text loops over the languages (`TestLanguage.use`). A probe ran the three heaviest tests three times inside one test and passed, so the loops stay clear of the watchdog (120,000 in `simulator.json`). Tests that read no text run once.
+  - **Evidence:**
+    - `resolve()` went RED against a stub that always answers English (every choice read `[0, 0, 0, 0, 0]`), then GREEN.
+    - `scripts/test-all.sh`: translations OK, glance OK, PASSED 84, failed 0.
+    - All 282 texts are byte-identical to HEAD's XML.
+    - Mutations: 4 caught by the glance check, 5 by the translations check, and two Spanish set names swapped were caught by `setNamesArePluralAndSingularSpa` and `glanceShowsTheDaySetAndProgressSpa`.
+    - Debug `-w`, release `-r -w` (34,204 bytes; 35,756 before) and the test build: 0 warnings.
+  - **Memory:**
+    - Each table loads in 360 bytes (glance) and 784 to 1,200 bytes (the others). Budgets: 512 and 1,536.
+    - Glance used 11,496 of 28,488 with Automatic in English, and 11,512 with Spanish, French or English forced on the English watch. Before: 10,968.
+    - Widget, main view plus the largest reading view: at most 25,408 (Spanish). Before: 27,264. A lookup adds at most 1,200 while it runs.
+    - The largest reading view held 880 bytes (`MEMORY_BUDGET` 3,072).
+  - **Size:** 1,377 authored lines of code, tests and scripts (`git diff -w`), 777 lines of translations moved out of the XML, and 514 generated lines.
+
 ## Next step
 
-L2: the design-B refactor with Automatic only, then L3 (the menu and the picker), then L4 (docs).
+L3: the menu's language item and the picker, then L4 (docs).
