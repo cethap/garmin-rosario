@@ -43,11 +43,14 @@ Run the commands with your persistent key in `DEVELOPER_KEY`:
 export DEVELOPER_KEY=~/garmin-keys/developer_key.der
 ```
 
-- [ ] **Tests pass in every language.** With the simulator running (`connectiq &`), `scripts/test-all.sh` prints `eng PASSED`, `spa PASSED` and `fre PASSED` and exits with 0. It runs `scripts/check-glance-strings.py` first.
-- [ ] **The release build has 0 warnings.** `monkeyc -f monkey.jungle -d instinct2 -o bin/Rosario.prg -y "$DEVELOPER_KEY" -r -w` prints no `WARNING` and `BUILD SUCCESSFUL`. A missing translation shows up as a warning here.
+- [ ] **The checks and the tests pass.** With the simulator running (`connectiq &`), `scripts/test-all.sh` exits with 0 after printing:
+  - `Translations OK`: every language has every text, and the generated files are up to date (`scripts/gen-i18n.py --check`);
+  - `Glance texts OK`: the glance uses only what it can load (`scripts/check-glance-strings.py`);
+  - `Tests PASSED`: one test build, which covers English, Spanish and French.
+- [ ] **The release build has 0 warnings.** `monkeyc -f monkey.jungle -d instinct2 -o bin/Rosario.prg -y "$DEVELOPER_KEY" -r -w` prints no `WARNING` and `BUILD SUCCESSFUL`. A missing translation does not show up here, because the texts are JSON data: the translations check above catches it.
 - [ ] **Version.** `manifest.xml` has no app version attribute (the SDK's manifest page lists `id`, `type`, `name`, `entry`, `launcherIcon` and `minApiLevel`), so there is nothing to bump in the repository. If the upload form asks for a version, give each update a higher one than the last, and tag the released commit with it (`git tag v1.0.0`).
 - [ ] **Store texts.** Review [store/listing-eng.md](../store/listing-eng.md), [store/listing-spa.md](../store/listing-spa.md) and [store/listing-fre.md](../store/listing-fre.md). The SDK docs give no length limits for the store's fields, so check what the form accepts when you paste them.
-- [ ] **Screenshots in each language.** For English, Spanish and French: the glance, the main screen during a decade, the menu and the reading view. Set the language in the simulator's Settings > Language menu, then use its Save Screenshot command.
+- [ ] **Screenshots in each language.** For English, Spanish and French: the glance, the main screen during a decade, the menu, the language picker and the reading view. Choose the language with **Language** in the app's menu, then use the simulator's Save Screenshot command.
 - [ ] **Rights to the Spanish quotes.** Their source page says "Copyright © Libreria Editrice Vaticana" (see [NOTICE](../NOTICE)). Garmin's App Review Guidelines (section 3a, in the SDK's `doc/docs/App_Review_Guidelines/Overview.html`) say: "You must own or have a license to use all IP included in or used by your app." Settle this before you submit.
 - [ ] **Supported part numbers.** The export leaves out one Instinct 2 part number (see [step 3](#3-export-the-iq-package)). Accept it or change `minApiLevel` first.
 - [ ] **The key is your persistent one**, and it is backed up.
@@ -94,7 +97,7 @@ bsdtar -tvf bin/Rosario.iq                 # manifest.xml, manifest.sig2, dev_ke
 bsdtar -xOf bin/Rosario.iq manifest.xml    # languages eng, fre, spa; no permissions
 ```
 
-A test export of this version was about 27 KB.
+A test export of this version was about 28 KB.
 
 ## 4. Upload to the Connect IQ Store
 

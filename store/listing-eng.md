@@ -21,12 +21,12 @@ Features
 - Read mystery: the name of the current mystery, a short Bible quote and its reference.
 - Your progress is saved for the day: leave and come back, and you continue where you were. A new day starts from the beginning.
 - The glance shows the day's mysteries and today's progress ("Joyful" over "Mystery 2/5").
-- In English, Spanish and French, following the watch's language.
+- In English, Spanish and French: in the watch's language, or in the one you choose in the menu (Language). The choice applies to every screen, the glance included, and stays until you change it.
 
 Controls
 - START (upper right) or DOWN (lower left): next bead (on the Hail Holy Queen: finish the Rosary).
 - UP (middle left): previous bead.
-- Hold UP: menu with "Read mystery" and "Restart" (start today's Rosary over, after a confirmation).
+- Hold UP: menu with "Read mystery", "Language" (Automatic, English, Español or Français) and "Restart" (start today's Rosary over, after a confirmation).
 - BACK (lower right): exit. Your progress is already saved.
 - From the watch face, press DOWN to reach the Rosario glance, then START to open it.
 

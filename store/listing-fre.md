@@ -21,12 +21,12 @@ Fonctions
 - Lire le mystère : le nom du mystère en cours, une courte citation biblique et sa référence.
 - Votre progression est enregistrée pour la journée : quittez et revenez, vous reprenez là où vous en étiez. Chaque nouveau jour repart du début.
 - Depuis le cadran, le bouton DOWN affiche Rosario avec les mystères du jour et la progression du jour (« Joyeux » au-dessus de « Mystère 2/5 »).
-- En français, anglais et espagnol, selon la langue de la montre.
+- En français, anglais et espagnol : dans la langue de la montre, ou dans celle que vous choisissez dans le menu (Langue). Le choix s'applique à tous les écrans, y compris celui qui s'affiche depuis le cadran, et reste en place jusqu'à ce que vous le changiez.
 
 Commandes
 - START (en haut à droite) ou DOWN (en bas à gauche) : grain suivant (sur le Salve Regina : terminer le chapelet).
 - UP (au milieu à gauche) : grain précédent.
-- Appui long sur UP : menu avec « Lire le mystère » et « Recommencer » (reprendre le chapelet du jour depuis le début, après confirmation).
+- Appui long sur UP : menu avec « Lire le mystère », « Langue » (Automatique, English, Español ou Français) et « Recommencer » (reprendre le chapelet du jour depuis le début, après confirmation).
 - BACK (en bas à droite) : quitter. Votre progression est déjà enregistrée.
 - Depuis le cadran, appuyez sur DOWN pour atteindre Rosario, puis sur START pour l'ouvrir.
 
