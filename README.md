@@ -1,6 +1,6 @@
 # Rosario for Garmin Instinct 2
 
-Rosario is a Connect IQ widget that guides the full Catholic Rosary bead by bead on the Garmin Instinct 2. It picks the mysteries of the day and saves your place. A vibration tells you where you are, so you can pray without looking at the watch. It is two presses away from the watch face, and it reads in English, Spanish or French: in the watch's language, or in the one you choose in its menu.
+Rosario is a Connect IQ widget that guides the full Catholic Rosary bead by bead on the Garmin Instinct 2. It picks the mysteries of the day and saves your place. A vibration tells you where you are, so you can pray without looking at the watch. It is two presses away from the watch face. It reads in the watch's language (English, Spanish or French), or in the one you choose in its menu, Latin included.
 
 [Resumen en español](#resumen-en-español) · [Résumé en français](#résumé-en-français)
 
@@ -30,16 +30,17 @@ Rosario is a Connect IQ widget that guides the full Catholic Rosary bead by bead
 
 ## Languages
 
-By default the app reads in the watch's language: Spanish on a watch set to Spanish, French on one set to French, and English on any other.
+By default the app reads in the watch's language: Spanish on a watch set to Spanish, French on one set to French, and English on any other. No watch can be set to Latin, so the app reads Latin only when you choose it.
 
 To choose another language, hold UP and open **Language** in the menu. The picker lists:
 
 | Option | Reads in |
 |--------|----------|
-| Automatic ("Automático", "Automatique"), the default | The watch's language, as above |
+| Automatic ("Automático", "Automatique", "Automatica"), the default | The watch's language, as above; never Latin |
 | English | English, whatever the watch's language |
 | Español | Spanish |
 | Français | French |
+| Latina | Latin |
 
 Each language is named in its own language, so you can find yours whatever the app reads in. A dot marks the current choice. START keeps the selected one: the Rosary reads in it at once, on the same bead, and so does every screen after it. The glance follows at its next refresh, within about 30 seconds. The choice stays on the watch until you change it again.
 
@@ -48,6 +49,9 @@ Each language is named in its own language, so you can find yours whatever the a
 | English (base) | `i18n/eng.json` | "Joyful" / "Not started" | "1st Joyful Mystery", "Hail Mary 7" |
 | Spanish | `i18n/spa.json` | "Gozosos" / "Sin empezar" | "1er Misterio Gozoso", "Avemaría 7" |
 | French | `i18n/fre.json` | "Joyeux" / "Non commencé" | "1er mystère joyeux", "Je vous salue Marie" |
+| Latin | `i18n/lat.json` | "Gaudiosa" / "Nondum coeptum" | "Primum mysterium gaudiosum", "Ave Maria 7" |
+
+The Latin names of the prayers, the mysteries and their sets are taken from the Holy See's Latin texts: the Latin prayers of the *Compendium of the Catechism of the Catholic Church* and, for the luminous mysteries, *Rosarium Virginis Mariae*. The Fatima prayer has no official Latin text; its first words, "Domine Iesu", follow the Latin that EWTN publishes. The sources are listed in `odd/tasks/latin-language.md`.
 
 The app is named "Rosario" in every language. In French, the main screen shows "Je vous salue Marie" without its number, because "Je vous salue Marie 7" fits no font on that line; the subscreen ring shows the number, as in every language.
 
@@ -79,7 +83,7 @@ In the language picker:
 
 | Button | Action |
 |--------|--------|
-| DOWN | Select the option below (does nothing on "Français") |
+| DOWN | Select the option below (does nothing on "Latina") |
 | UP | Select the option above (does nothing on Automatic) |
 | START | Keep the selected language and go back to the Rosary, now in that language |
 | BACK | Back to the Rosary, with the language unchanged |
@@ -229,7 +233,7 @@ Tests:
 | `source/LayoutTests.mc` | Layout tests for the glance, the main screen, the menu, the language picker and the reading view |
 | `source/VisibleArea.mc` | Test-only visible area of the Instinct 2, per screen row |
 | `source/TextPins.mc` | Shared checks behind the tests that pin texts word for word |
-| `source/PinsEng.mc`, `source/PinsSpa.mc`, `source/PinsFre.mc` | Each language's pinned texts |
+| `source/PinsEng.mc`, `source/PinsSpa.mc`, `source/PinsFre.mc`, `source/PinsLat.mc` | Each language's pinned texts |
 | `scripts/test-all.sh` | Checks the translations and the glance, then builds and runs the tests |
 | `scripts/check-glance-strings.py` | Checks that the glance loads only glance-scoped texts and glance code |
 
@@ -237,7 +241,7 @@ Resources:
 
 | Path | Purpose |
 |------|---------|
-| `i18n/eng.json`, `i18n/spa.json`, `i18n/fre.json` | Every text in each language: the labels, the 20 mystery names, the Bible quotes and their references |
+| `i18n/eng.json`, `i18n/spa.json`, `i18n/fre.json`, `i18n/lat.json` | Every text in each language: the labels, the 20 mystery names, the Bible quotes and their references |
 | `scripts/gen-i18n.py` | Generates the tables and their keys from `i18n/`, and checks them (`--check`) |
 | `resources/i18n/` | Generated: each language's tables as JSON data, the glance's marked `scope="glance"` |
 | `resources/strings/strings.xml` | The app's name, the same in every language |
@@ -267,13 +271,15 @@ Each language quotes its own Catholic Bible, copied word for word from the sourc
 | English | Douay-Rheims Bible, Challoner revision | https://www.drbo.org/ | Public domain |
 | French | "La Sainte Bible", translated by Augustin Crampon, Desclée, 1923 edition | https://fr.wikisource.org/wiki/Bible_Crampon_1923 | Public domain |
 | Spanish | "El Libro del Pueblo de Dios. La Biblia" (Traducción argentina), 1990 | https://www.vatican.va/archive/ESL0506/_INDEX.HTM | "Copyright © Libreria Editrice Vaticana", as the source page states. Used with attribution; all rights remain with the publisher |
+| Latin | Vulgata Clementina, in the text of the Clementine Text Project | https://www.biblegateway.com/versions/Biblia-Sacra-Vulgata-VULGATE/ (checked against https://www.drbo.org/lvb/) | Public domain |
 
 The Bible quotes are not covered by the MIT license of the code; they keep their own terms (see [NOTICE](NOTICE)).
 
 Notes on the quotes:
 
 - A "…" marks a quote that starts or ends inside a sentence.
-- References follow each source's numbering. The English and French sources follow the Vulgate in places: the voice from the cloud at the Transfiguration is Mark 9:6 there (Mc 9, 6), and Mc 9, 7 in the Spanish Bible.
+- References follow each source's numbering. The English and French sources follow the Vulgate in places: the voice from the cloud at the Transfiguration is Mark 9:6 there (Mc 9, 6), as in the Latin Vulgate itself, and Mc 9, 7 in the Spanish Bible.
+- The Latin quotes are the English ones, clause for clause. Where the Latin sentence goes on past the English quote's full stop, the Latin quote ends in "…". Lc 22, 19 stops before "hoc facite in meam commemorationem", because "commemorationem." is wider than the reading window and a word is never split. The Latin references use the abbreviations of the Holy See's Latin documents ("Lc 1, 28", "Io 19, 1", "Apc 12, 1").
 - The French quotes keep the source's no-break spaces inside « » and before : ; ? !.
 - The quotes live in each language's `i18n/<lang>.json`, one table per set of mysteries, and the app loads only the set being read.
 
@@ -285,10 +291,10 @@ The code is under the MIT license ([LICENSE](LICENSE)). The Bible quotes keep th
 
 Rosario es un widget de Connect IQ que guía el Rosario completo, cuenta por cuenta, en el Garmin Instinct 2. Elige los misterios del día (Gozosos el lunes y el sábado, Dolorosos el martes y el viernes, Gloriosos el miércoles y el domingo, Luminosos el jueves) y guarda el progreso del día. Cada cuenta vibra con un toque suave y cada Gloria con tres pulsos fuertes, para rezar sin mirar el reloj. Desde la esfera del reloj, el botón DOWN muestra Rosario con los misterios del día y el progreso ("Gozosos" sobre "Misterio 2/5"), y START lo abre.
 
-Botones: START o DOWN avanza a la cuenta siguiente y UP vuelve a la anterior. Al mantener pulsado UP se abre el menú, con "Leer misterio" (el nombre del misterio y una cita bíblica), "Idioma" y "Reiniciar". Por defecto, la aplicación se muestra en el idioma del reloj: español, inglés o francés. Con "Idioma" puede elegir otro, entre "Automático" (el del reloj), "English", "Español" y "Français". La elección se aplica de inmediato a todas las pantallas, también a la que se ve desde la esfera del reloj, y se conserva hasta que se cambie. Las citas en español provienen de "El Libro del Pueblo de Dios", publicado en el sitio de la Santa Sede (Copyright © Libreria Editrice Vaticana).
+Botones: START o DOWN avanza a la cuenta siguiente y UP vuelve a la anterior. Al mantener pulsado UP se abre el menú, con "Leer misterio" (el nombre del misterio y una cita bíblica), "Idioma" y "Reiniciar". Por defecto, la aplicación se muestra en el idioma del reloj: español, inglés o francés. Con "Idioma" puede elegir otro, entre "Automático" (el del reloj), "English", "Español", "Français" y "Latina". El latín solo se elige ahí, porque ningún reloj se configura en latín. La elección se aplica de inmediato a todas las pantallas, también a la que se ve desde la esfera del reloj, y se conserva hasta que se cambie. Las citas en español provienen de "El Libro del Pueblo de Dios", publicado en el sitio de la Santa Sede (Copyright © Libreria Editrice Vaticana), y las citas en latín, de la Vulgata Clementina (dominio público).
 
 ## Résumé en français
 
 Rosario est un widget Connect IQ qui guide le chapelet complet, grain par grain, sur la Garmin Instinct 2. Il choisit les mystères du jour (joyeux le lundi et le samedi, douloureux le mardi et le vendredi, glorieux le mercredi et le dimanche, lumineux le jeudi) et enregistre la progression du jour. Chaque grain vibre d'une touche légère et chaque Gloire au Père de trois impulsions fortes, pour prier sans regarder la montre. Depuis le cadran, le bouton DOWN affiche Rosario avec les mystères du jour et la progression (« Joyeux » au-dessus de « Mystère 2/5 »), et START l'ouvre.
 
-Boutons : START ou DOWN passe au grain suivant et UP revient au précédent. Un appui long sur UP ouvre le menu, avec « Lire le mystère » (le nom du mystère et une citation biblique), « Langue » et « Recommencer ». Par défaut, l'application suit la langue de la montre : français, anglais ou espagnol. « Langue » permet d'en choisir une autre, parmi « Automatique » (celle de la montre), « English », « Español » et « Français ». Le choix s'applique aussitôt à tous les écrans, y compris celui qui s'affiche depuis le cadran, et reste en place jusqu'au prochain changement. Les citations en français viennent de la Bible Crampon (édition de 1923, domaine public), transcrite sur Wikisource.
+Boutons : START ou DOWN passe au grain suivant et UP revient au précédent. Un appui long sur UP ouvre le menu, avec « Lire le mystère » (le nom du mystère et une citation biblique), « Langue » et « Recommencer ». Par défaut, l'application suit la langue de la montre : français, anglais ou espagnol. « Langue » permet d'en choisir une autre, parmi « Automatique » (celle de la montre), « English », « Español », « Français » et « Latina ». Le latin ne se choisit que là, car aucune montre ne se règle en latin. Le choix s'applique aussitôt à tous les écrans, y compris celui qui s'affiche depuis le cadran, et reste en place jusqu'au prochain changement. Les citations en français viennent de la Bible Crampon (édition de 1923, domaine public), transcrite sur Wikisource, et les citations en latin de la Vulgate clémentine (domaine public).

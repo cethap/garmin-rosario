@@ -11,6 +11,7 @@ resources/i18n/<language>.xml:
   i18n/eng.json   English
   i18n/spa.json   Spanish
   i18n/fre.json   French
+  i18n/lat.json   Latin
 
 English
   Douay-Rheims Bible, Challoner revision. Public domain.
@@ -28,3 +29,12 @@ Spanish
   https://www.vatican.va/archive/ESL0506/_INDEX.HTM
   Copyright © Libreria Editrice Vaticana
   Used with attribution; all rights remain with the publisher.
+
+Latin
+  Vulgata Clementina (the Clementine Vulgate). Public domain.
+  Copied from the text of the Clementine Text Project, as Bible Gateway
+  publishes it (version VULGATE),
+  https://www.biblegateway.com/versions/Biblia-Sacra-Vulgata-VULGATE/
+  The project asks its users to acknowledge it and to make clear any
+  modifications: the quotes are excerpts, and "…" marks one that starts or
+  ends inside a sentence. Checked against https://www.drbo.org/lvb/
