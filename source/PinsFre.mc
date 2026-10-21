@@ -81,6 +81,17 @@ function sorrowfulTitleKeepsItsLongWordWhole(logger as Logger) as Boolean {
     return TextPins.sameTexts(lines, ["2e", "mystère", "douloureux"]);
 }
 
+// The main screen wraps a mystery's name at spaces, never after an elided article: "d’épines" and
+// "l’Eucharistie" stay whole (fitTextToArea broke them after the apostrophe).
+(:test :fre)
+function mysteryNameKeepsItsElisionsWhole(logger as Logger) as Boolean {
+    var crowning = MainLayout.wrapMystery(Rosary.mysteryName(Rosary.SORROWFUL, 3));
+    var eucharist = MainLayout.wrapMystery(Rosary.mysteryName(Rosary.LUMINOUS, 5));
+    logger.debug("crowning=" + crowning + " eucharist=" + eucharist);
+    return TextPins.sameTexts(crowning, ["Le Couronnement", "d’épines"])
+        && TextPins.sameTexts(eucharist, ["L’Institution de", "l’Eucharistie"]);
+}
+
 (:test :fre)
 function everyMysteryHasItsBibleQuote(logger as Logger) as Boolean {
     return TextPins.bibleQuotes(logger, [

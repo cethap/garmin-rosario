@@ -58,14 +58,28 @@ module MainLayout {
     }
 
     // Word-wraps the decade title and the mystery with a system font (they have accents).
-    // A title that fitTextToArea cannot fit in 3 lines without cutting a word holds a word wider than the
-    // title's width, such as French "douloureux" (82px), which it would cut to "doulour…". That title wraps
-    // at spaces instead, the wide word on a line of its own: it is always the last word, and the lower rows
-    // the last line takes leave it room (LayoutTests.mc measures every title in its place).
     function wrapTitle(text as String) as Array<String> {
-        var fitted = Graphics.fitTextToArea(text, Graphics.FONT_TINY, TITLE_WIDTH, THREE_LINES_HEIGHT, false);
+        return wrap(text, TITLE_WIDTH, THREE_LINES_HEIGHT);
+    }
+
+    function wrapMystery(text as String) as Array<String> {
+        return wrap(text, MYSTERY_WIDTH, TWO_LINES_HEIGHT);
+    }
+
+    // The text in the tiny font, wrapped to the width in the lines the height allows. fitTextToArea's own
+    // wrap is kept when it breaks lines only at spaces and cuts no word, as it does for every Spanish and
+    // English text. Otherwise the text wraps at spaces only, each line as wide as the width allows:
+    // fitTextToArea also breaks after an apostrophe (French "Le Couronnement d’" / "épines"), and it cuts a
+    // word wider than the width (French "douloureux", 82px, to "doulour…" in the 76px title), which here
+    // takes a line of its own, the title's last, where the lower rows leave it room. LayoutTests.mc measures
+    // every line in its place and checks that no text is cut or needs more lines than it has.
+    function wrap(text as String, width as Number, height as Number) as Array<String> {
+        var fitted = Graphics.fitTextToArea(text, Graphics.FONT_TINY, width, height, false);
         if (fitted != null) {
-            return Rosary.splitLines(fitted);
+            var lines = Rosary.splitLines(fitted);
+            if (joined(lines).equals(text)) {
+                return lines;
+            }
         }
         var lines = [] as Array<String>;
         var line = null as String?;
@@ -76,7 +90,7 @@ module MainLayout {
             rest = (cut == null ? "" : rest.substring(cut + 1, rest.length())) as String;
             if (line == null) {
                 line = word;
-            } else if (Graphics.fitTextToArea(line + " " + word, Graphics.FONT_TINY, TITLE_WIDTH, ONE_LINE_HEIGHT, false) != null) {
+            } else if (Graphics.fitTextToArea(line + " " + word, Graphics.FONT_TINY, width, ONE_LINE_HEIGHT, false) != null) {
                 line = line + " " + word;
             } else {
                 lines.add(line);
@@ -89,12 +103,13 @@ module MainLayout {
         return lines;
     }
 
-    function wrapMystery(text as String) as Array<String> {
-        return wrap(text, MYSTERY_WIDTH, TWO_LINES_HEIGHT);
-    }
-
-    function wrap(text as String, width as Number, height as Number) as Array<String> {
-        return Rosary.splitLines(Graphics.fitTextToArea(text, Graphics.FONT_TINY, width, height, true));
+    // The lines joined back with spaces.
+    function joined(lines as Array<String>) as String {
+        var text = "";
+        for (var i = 0; i < lines.size(); i++) {
+            text += (i > 0 ? " " : "") + lines[i];
+        }
+        return text;
     }
 
     // The prayer's font: the largest of large, medium and small whose line holds the label, else tiny. A
