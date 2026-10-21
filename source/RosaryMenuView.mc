@@ -25,11 +25,14 @@ module MenuLayout {
     const BAR_RADIUS = 4;
     // The scroll bar, right of the bars: a 1px track at TRACK_X from TRACK_TOP to TRACK_BOTTOM, centered on
     // the bars, and on it a THUMB_WIDTH thumb whose length and place show the part of the list on screen. The
-    // track ends where the bezel still leaves the thumb the 2px margin, rows below included (row 141).
+    // track ends where the bezel still leaves the thumb the 2px margin, rows below included (row 141). The
+    // reading view draws the same scroll bar in the same place, beside its window (ReadingLayout.thumb).
     const TRACK_X = 166;
     const TRACK_TOP = 85;
     const TRACK_BOTTOM = 141;
     const THUMB_WIDTH = 3;
+    // The shortest thumb, for a long list or text: 8px still reads as a bar, not a dot.
+    const THUMB_MIN = 8;
     // The mark of the saved choice in the language picker: a filled disc at the left end of its bar, clear of
     // the widest label ("Automatique", 118px, from x 29).
     const MARK_X = 21;
@@ -73,14 +76,32 @@ module MenuLayout {
         return first;
     }
 
-    // Box [left, top, right, bottom] of the scroll bar's thumb for a list of count items shown from first:
-    // as long as the track times the share of the items on screen, as far down as the hidden items above.
-    function thumb(first as Number, count as Number) as Array<Number> {
+    // Box [left, top, right, bottom] of the scroll bar's thumb, with shown items (or lines) on screen out of
+    // count, the first of them first: as long as the track times the share on screen, and at least THUMB_MIN;
+    // at the top of the track while the first item shows, at its bottom once the last one does, and in
+    // proportion between.
+    function thumb(first as Number, shown as Number, count as Number) as Array<Number> {
         var track = TRACK_BOTTOM - TRACK_TOP;
-        var top = TRACK_TOP + track * first / count;
-        var bottom = TRACK_TOP + track * (first + VISIBLE_ITEMS) / count;
+        var length = count > shown ? track * shown / count : track;
+        if (length < THUMB_MIN) {
+            length = THUMB_MIN;
+        }
+        var offScreen = count - shown;
+        var top = TRACK_TOP + (offScreen > 0 ? (track - length) * first / offScreen : 0);
         var left = TRACK_X - THUMB_WIDTH / 2;
-        return [left, top, left + THUMB_WIDTH, bottom] as Array<Number>;
+        return [left, top, left + THUMB_WIDTH, top + length] as Array<Number>;
+    }
+
+    // Draws the scroll bar in white for shown items (or lines) on screen out of count, the first of them first,
+    // when they do not all fit on screen; nothing when they do.
+    function drawScrollBar(dc as Dc, first as Number, shown as Number, count as Number) as Void {
+        if (count <= shown) {
+            return;
+        }
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawLine(TRACK_X, TRACK_TOP, TRACK_X, TRACK_BOTTOM);
+        var box = thumb(first, shown, count);
+        dc.fillRectangle(box[0], box[1], box[2] - box[0], box[3] - box[1]);
     }
 
     // Center and radius [x, y, radius] of the saved choice's mark on the bar in a slot.
@@ -158,12 +179,7 @@ class BarListView extends WatchUi.View {
                 dc.fillCircle(mark[0], mark[1], mark[2]);
             }
         }
-        if (_labels.size() > MenuLayout.VISIBLE_ITEMS) {
-            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-            dc.drawLine(MenuLayout.TRACK_X, MenuLayout.TRACK_TOP, MenuLayout.TRACK_X, MenuLayout.TRACK_BOTTOM);
-            var thumb = MenuLayout.thumb(first, _labels.size());
-            dc.fillRectangle(thumb[0], thumb[1], thumb[2] - thumb[0], thumb[3] - thumb[1]);
-        }
+        MenuLayout.drawScrollBar(dc, first, MenuLayout.VISIBLE_ITEMS, _labels.size());
     }
 }
 
