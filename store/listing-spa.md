@@ -35,7 +35,7 @@ Para tener en cuenta
 - No usa ningún permiso: no necesita teléfono, conexión a internet ni sensores. El progreso se queda en el reloj.
 - Requiere Connect IQ 3.4 o posterior en el reloj.
 - Citas bíblicas: "El Libro del Pueblo de Dios", publicado en el sitio de la Santa Sede (Copyright © Libreria Editrice Vaticana). Las citas en inglés provienen de la Biblia Douay-Rheims y las citas en francés de la Biblia Crampon de 1923, ambas de dominio público.
-- Código fuente, preguntas e informes de errores: <URL del repositorio de GitHub>
+- Código fuente, preguntas e informes de errores: https://github.com/cethap/garmin-rosario
 
 ## Permisos
 

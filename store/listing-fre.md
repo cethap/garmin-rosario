@@ -35,7 +35,7 @@ Bon à savoir
 - N'utilise aucune autorisation : pas besoin de téléphone, de connexion Internet ni de capteurs. Votre progression reste sur la montre.
 - Nécessite Connect IQ 3.4 ou ultérieur sur la montre.
 - Citations bibliques : Bible Crampon, édition de 1923 (domaine public), transcrite sur Wikisource. Les citations anglaises viennent de la Bible Douay-Rheims (domaine public) et les citations espagnoles de « El Libro del Pueblo de Dios » (Copyright © Libreria Editrice Vaticana).
-- Code source, questions et signalement de bogues : <URL du dépôt GitHub>
+- Code source, questions et signalement de bogues : https://github.com/cethap/garmin-rosario
 
 ## Autorisations
 

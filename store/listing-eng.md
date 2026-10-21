@@ -35,7 +35,7 @@ Good to know
 - Uses no permissions: it needs no phone, no internet connection and no sensors. Your progress stays on the watch.
 - Requires Connect IQ 3.4 or later on the watch.
 - Bible quotes: Douay-Rheims Bible, Challoner revision (public domain), from drbo.org. The Spanish quotes come from "El Libro del Pueblo de Dios" (Copyright © Libreria Editrice Vaticana), and the French ones from the Bible Crampon 1923 (public domain).
-- Source code, questions and bug reports: <GitHub repository URL>
+- Source code, questions and bug reports: https://github.com/cethap/garmin-rosario
 
 ## Permissions
 
