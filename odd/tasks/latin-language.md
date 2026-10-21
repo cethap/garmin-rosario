@@ -40,7 +40,7 @@ Out of scope: Latin as a device language, the Nova Vulgata.
 
 | ID | Task | Route | Status |
 |----|------|-------|--------|
-| LA1 | `feat(i18n)`: Latin texts and Vulgata Clementina quotes, the fifth picker item, tests | delegated writer (2+ non-trivial files, research for sources) | [ ] |
+| LA1 | `feat(i18n)`: Latin texts and Vulgata Clementina quotes, the fifth picker item, tests | delegated writer (2+ non-trivial files, research for sources) | [x] e1759f7 |
 | LA2 | `docs`: README, store listings, NOTICE | delegated writer | [ ] |
 
 ## Acceptance criteria
@@ -132,7 +132,47 @@ The parent approved them. "Secundum" (76px) gave way to "Alterum" (59px): the fi
 ## Progress
 
 - Feature document created.
+- LA1 done in e1759f7 (delegated writer).
+  - **Code.**
+    - `lat` added to `scripts/gen-i18n.py`, giving `I18n.LAT` = 3.
+    - `Choice.LATIN` maps to `LAT` in `resolve()`, and `decodeChoice` accepts 0..4.
+    - "Latina" is the picker's fifth item.
+    - New test `automaticNeverReadsLatin`: Automatic on each of the 36 `System.LANGUAGE_*` values reads Spanish, French or English, never Latin, and the Latin choice always reads Latin.
+    - `PinsLat.mc` holds the 12 shared pins in Latin.
+  - **TDD.** The RED build had `lat` with English texts and `LATIN` in the enum, with `resolve()`, `decodeChoice()` and the picker unchanged. It reported FAILED (passed=83, failed=19, errors=0), exactly as expected:
+    - the 12 `*Lat` pins;
+    - `resolveFollowsTheChoiceThenTheWatch`, `automaticNeverReadsLatin` and `savedChoiceRoundTripsAndInvalidReadsAsAutomatic`;
+    - the 3 picker tests and `languagePickerStaysInsideTheVisibleArea`.
+  - **First GREEN run: 2 failures**, both measured widths:
+    - "Secundum", at 76px, kept a 1px margin on the first title line of the reading view and the menu. It became "Alterum", at 59px, which keeps 4px.
+    - "commemorationem.", at 144px, was wider than the 132px reading window. Lc 22, 19 now stops at "datur…".
+  - **The parent's decisions:** "Ave Maria" and "Salve Regina" without commas. The added ellipses, the lower-case source words, "Agonia in Horto" and the shortened "Regni Dei proclamatio" are kept.
+  - **Evidence:**
+    - `scripts/test-all.sh`: translations OK (4 languages × 7 tables, 96 texts), glance OK (4 glance-scoped tables), PASSED (passed=102, failed=0, errors=0).
+    - The eng, spa and fre XML files are byte-identical to 9f515a1.
+    - Every Latin prayer label takes the large font.
+    - The tightest measured margins are 2px for "mysterium" on the second title line, 5px for "Lectio mysterii" (139px) and 6px for "Canense matrimonium" (162px).
+    - Debug `-w`, release `-r -w` (40,348 bytes; 36,332 before) and test `-t -w` builds: 0 warnings.
+    - `monkeyc -e -r -w`: BUILD SUCCESSFUL, 30,291 bytes, with only the known 006-B4071-00 warning. The manifest still declares eng, fre and spa, and no permissions.
+    - The verbatim check (the writer's `check_quotes.py`, on the downloaded pages): 20 of 20 quotes verbatim in Bible Gateway's VULGATE, and the same words in drbo.org once its space before `:` is removed. A one-word change makes it fail.
+  - **Memory.** Measured with uncommitted instrumented copies, release builds, in the simulator. The glance printed `usedMemory` in `onUpdate`.
+
+    | | Bytes |
+    |---|---|
+    | Glance, Latin chosen (saved in Storage) | 11,624 of 28,488 ("Gloriosa" / "Nondum coeptum") |
+    | Glance, Latin forced in code | 11,576 |
+    | Glance, Automatic (nothing saved) | 11,608 |
+    | Glance, Automatic forced in code | 11,576 |
+    | Glance at 9f515a1, same instrumentation | 11,552 |
+    | Widget peak, main view plus the largest reading view (run as a watch-app) | 27,488 (English), 27,456 (Spanish), 27,472 (French), 27,440 (Latin) |
+    | Widget peak at 9f515a1, same method | 27,008 (Spanish) |
+    | Main view plus the open picker | at most 27,312 |
+
+    - The tables Latin loads hold 368 bytes (glance, budget 512) and 728 to 1,064 bytes (the others, budget 1,536).
+    - The menu holds 656 bytes and the picker 536, against a budget of 3,072.
+    - The 9f515a1 widget figure differs from L4's 27,584 because the method differs: the reading views were laid out, not drawn, so the probe stays clear of the watchdog.
+  - **Size:** 550 lines added and 50 removed, of which about 120 are Latin texts, about 140 are this document and 125 are generated.
 
 ## Next step
 
-LA1.
+LA2.
