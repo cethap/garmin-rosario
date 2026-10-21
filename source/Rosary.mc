@@ -1,8 +1,7 @@
 import Toybox.Lang;
-import Toybox.WatchUi;
 
 // Rosary logic shared by the widget, the glance and the unit tests. It is pure and device-independent,
-// except for the texts, which come from the string resources (see "Text" below). The labels only the
+// except for the texts, which come from the tables of the current language (I18n.mc). The labels only the
 // full-screen widget shows continue this module in RosaryLabels.mc, outside the glance.
 //
 // The Rosary is a sequence of 72 steps (beads), indexed 0..71:
@@ -180,15 +179,15 @@ module Rosary {
         return GLORIOUS;
     }
 
-    // "Gozosos": the set's name as the glance and "Misterios Gozosos" use it. Glance-scoped.
+    // "Gozosos": the set's name as the glance shows it. A glance text.
     function setNamePlural(set as MysterySet) as String {
-        var ids = [Rez.Strings.SetPluralJoyful, Rez.Strings.SetPluralSorrowful, Rez.Strings.SetPluralGlorious,
-            Rez.Strings.SetPluralLuminous] as Array<ResourceId>;
-        return loadText(ids[set as Number]);
+        var keys = [I18n.SetPluralJoyful, I18n.SetPluralSorrowful, I18n.SetPluralGlorious, I18n.SetPluralLuminous]
+            as Array<Number>;
+        return I18n.glanceText(keys[set as Number]);
     }
 
-    // Index 0..19 of mystery 1..5 of a set, in MysterySet order. Resource N = index + 1 holds the mystery's
-    // name (MysteryN, resources/strings/mysteries.xml) and its Bible quote (QuoteN and RefN, quotes.xml).
+    // Index 0..19 of mystery 1..5 of a set, in MysterySet order. With N = index + 1, the key MysteryN holds
+    // the mystery's name, and QuoteN and RefN its Bible quote (I18nKeys.mc).
     function mysteryIndex(set as MysterySet, decade as Number) as Number {
         return (set as Number) * DECADES + decade - 1;
     }
@@ -208,19 +207,11 @@ module Rosary {
 
     // --- Text ---
     //
-    // Every text the app shows is a string resource (resources/strings), so it follows the device's
-    // language. A text made of parts is a template whose $1$, $2$ Lang.format fills in, so each language
-    // can order its words. Views load a text once and keep it, never on every frame.
-    //
-    // The glance has only the strings marked scope="glance": the set names in plural, the glance summaries
-    // and the Salve. Looking up any other one there crashes with "Symbol Not Found", and the compiler does
-    // not warn. So this file, which the glance loads, looks up only those; each lookup table is built inside
-    // its function (a module constant would be built in the glance too); and the other labels live in
+    // Every text the app shows comes from I18n, in the language the user chose (I18n.mc). The glance can load
+    // only the glance table: the set names in plural, the glance summaries and the Salve. So this file, which
+    // the glance loads, looks up only those, with I18n.glanceText; each array of keys is built inside its
+    // function (a module constant would be built in the glance too); and the other labels live in
     // RosaryLabels.mc, outside the glance.
-
-    function loadText(id as ResourceId) as String {
-        return WatchUi.loadResource(id) as String;
-    }
 
     // --- Feedback ---
 
@@ -270,22 +261,22 @@ module Rosary {
 
     // Today's progress from the saved position: "Sin empezar" (NOT_STARTED), "En progreso" (opening, also
     // a day moved back to the Credo; "Inicio" read as not started), "Misterio 2/5" (the GlanceMystery
-    // template), "Salve" until it is prayed, "Completado" (DONE). Only glance-scoped strings.
+    // template), "Salve" until it is prayed, "Completado" (DONE). Only glance texts.
     function glanceSummary(position as Number) as String {
         if (position < 0) {
-            return loadText(Rez.Strings.GlanceNotStarted);
+            return I18n.glanceText(I18n.GlanceNotStarted);
         }
         if (position >= DONE) {
-            return loadText(Rez.Strings.GlanceDone);
+            return I18n.glanceText(I18n.GlanceDone);
         }
         if (position == LAST_STEP) {
-            return loadText(Rez.Strings.PrayerSalve);
+            return I18n.glanceText(I18n.PrayerSalve);
         }
         var decade = decadeAt(position);
         if (decade == 0) {
-            return loadText(Rez.Strings.GlanceInProgress);
+            return I18n.glanceText(I18n.GlanceInProgress);
         }
-        return Lang.format(loadText(Rez.Strings.GlanceMystery), [decade, DECADES]);
+        return Lang.format(I18n.glanceText(I18n.GlanceMystery), [decade, DECADES]);
     }
 
     // --- Persistence ---

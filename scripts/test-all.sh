@@ -1,34 +1,32 @@
 #!/bin/bash
-# Runs the unit tests once per language: builds each suite from its test-<lang>.jungle, runs it in the
-# Connect IQ simulator and prints one PASSED or FAILED line per language. Exits 0 only when every suite
-# passes.
+# Runs every check of the app: the translations (scripts/gen-i18n.py --check), the glance's texts
+# (scripts/check-glance-strings.py), then the unit tests, in one test build that covers every language, run
+# in the Connect IQ simulator. Prints one line per step and exits 0 only when every step passes.
 #
-# Usage:  DEVELOPER_KEY=/path/to/developer_key.der scripts/test-all.sh [lang ...]
-#         With no language given, every test-<lang>.jungle in the project runs.
+# Usage:  DEVELOPER_KEY=/path/to/developer_key.der scripts/test-all.sh
 #
 # Environment:
-#   DEVELOPER_KEY  key that signs the test builds (required; any developer key works for tests)
+#   DEVELOPER_KEY  key that signs the test build (required; any developer key works for tests)
 #   CIQ_SDK        Connect IQ SDK folder (default: the SDK chosen in the SDK Manager, else the one that
 #                  holds the monkeyc on the PATH)
-#   TEST_OUT       folder for the builds and their logs (default: bin/test)
-#   TEST_TIMEOUT   seconds a run may take before it counts as hung (default: 180)
+#   TEST_OUT       folder for the build and its logs (default: bin/test)
+#   TEST_TIMEOUT   seconds a run may take before it counts as hung (default: 300)
 #
 # Needs a running simulator (connectiq &), Java 17 or later on the PATH, perl and python3.
 #
-# First it runs scripts/check-glance-strings.py: the glance may load only glance-scoped strings.
-#
-# Each suite is that language's strings put over the base ones, plus that language's pins (see
-# test-spa.jungle). A build warning fails the suite: a string a translation leaves out shows up as one
-# ("String id ... undefined for language ..."). A run talks to the simulator through MonkeyDoDeux, which
-# this script starts in its own process group: a run that hangs is stopped at the timeout together with
-# everything it started, so it leaves no client connected to the simulator, and is tried once more. A
-# run's result counts only when its output names its own suite ("suite=<lang>", logged by the pins).
+# The translations' check fails when a language leaves a text out or adds a placeholder, or when the files
+# scripts/gen-i18n.py generates are stale: the compiler cannot tell, since every language's texts are JSON
+# data. The glance's check comes next: a slip there crashes the glance on the watch only. A build warning
+# fails the tests. A run talks to the simulator through MonkeyDoDeux, which this script starts in its own
+# process group: a run that hangs is stopped at the timeout together with everything it started, so it
+# leaves no client connected to the simulator, and is tried once more. A run's result counts only when its
+# output names this suite ("suite=rosario", logged by source/I18nTests.mc).
 set -u
 cd "$(dirname "$0")/.." || exit 2
 
 DEVICE=instinct2
 OUT="${TEST_OUT:-bin/test}"
-TIMEOUT="${TEST_TIMEOUT:-180}"
+TIMEOUT="${TEST_TIMEOUT:-300}"
 SDK_CONFIG="$HOME/Library/Application Support/Garmin/ConnectIQ/current-sdk.cfg"
 
 if [ -z "${DEVELOPER_KEY:-}" ] || [ ! -f "$DEVELOPER_KEY" ]; then
@@ -49,25 +47,9 @@ if [ ! -x "$SDK/bin/monkeyc" ]; then
     exit 2
 fi
 
-if [ $# -gt 0 ]; then
-    LANGUAGES=("$@")
-else
-    LANGUAGES=()
-    for jungle in test-*.jungle; do
-        [ -f "$jungle" ] || continue
-        lang="${jungle#test-}"
-        LANGUAGES+=("${lang%.jungle}")
-    done
-fi
-if [ ${#LANGUAGES[@]} -eq 0 ]; then
-    echo "No test-<lang>.jungle found." >&2
-    exit 2
-fi
-
 mkdir -p "$OUT"
 
-# The glance may use only glance-scoped strings and glance code. A slip crashes the glance on the watch
-# only: the compiler does not warn and the tests run as the full app, so it is checked first.
+python3 scripts/gen-i18n.py --check || exit 1
 python3 scripts/check-glance-strings.py || exit 1
 
 # Runs a test build in the simulator, its output in a log. MonkeyDoDeux is what the SDK's monkeydo script
@@ -98,47 +80,36 @@ run_suite() {
 # this suite's own output; nothing otherwise. (monkeydo -t exits 1 even when every test passes, so the exit
 # status says nothing.)
 suite_result() {
-    local lang="$1" log="$2"
-    grep -Eq "suite=$lang\$" "$log" || return 0
+    local log="$1"
+    grep -Eq "suite=rosario( |\$)" "$log" || return 0
     grep -E '^(PASSED|FAILED) \(passed=' "$log" | tail -n 1
 }
 
-failed=0
-for lang in "${LANGUAGES[@]}"; do
-    jungle="test-$lang.jungle"
-    prg="$OUT/RosarioTest-$lang.prg"
-    build_log="$OUT/RosarioTest-$lang.build.log"
-    run_log="$OUT/RosarioTest-$lang.log"
-    if [ ! -f "$jungle" ]; then
-        echo "$lang FAILED (no $jungle)"
-        failed=1
-        continue
-    fi
-    if ! "$SDK/bin/monkeyc" -f "$jungle" -d "$DEVICE" -o "$prg" -y "$DEVELOPER_KEY" -w -t > "$build_log" 2>&1; then
-        echo "$lang FAILED (build): $build_log"
-        failed=1
-        continue
-    fi
-    warnings="$(grep -c 'WARNING' "$build_log")"
-    if [ "$warnings" -gt 0 ]; then
-        echo "$lang FAILED ($warnings build warnings): $build_log"
-        failed=1
-        continue
-    fi
-    result=""
-    for attempt in 1 2; do
-        run_suite "$prg" "$run_log"
-        result="$(suite_result "$lang" "$run_log")"
-        [ -n "$result" ] && break
-    done
-    if [ -z "$result" ]; then
-        echo "$lang FAILED (no result from the simulator after 2 runs): $run_log"
-        failed=1
-    elif [ "${result%% *}" = "PASSED" ]; then
-        echo "$lang $result"
-    else
-        echo "$lang $result: $run_log"
-        failed=1
-    fi
+prg="$OUT/RosarioTest.prg"
+build_log="$OUT/RosarioTest.build.log"
+run_log="$OUT/RosarioTest.log"
+if ! "$SDK/bin/monkeyc" -f monkey.jungle -d "$DEVICE" -o "$prg" -y "$DEVELOPER_KEY" -w -t > "$build_log" 2>&1; then
+    echo "Tests FAILED (build): $build_log"
+    exit 1
+fi
+warnings="$(grep -c 'WARNING' "$build_log")"
+if [ "$warnings" -gt 0 ]; then
+    echo "Tests FAILED ($warnings build warnings): $build_log"
+    exit 1
+fi
+result=""
+for attempt in 1 2; do
+    run_suite "$prg" "$run_log"
+    result="$(suite_result "$run_log")"
+    [ -n "$result" ] && break
 done
-exit $failed
+if [ -z "$result" ]; then
+    echo "Tests FAILED (no result from the simulator after 2 runs): $run_log"
+    exit 1
+fi
+if [ "${result%% *}" = "PASSED" ]; then
+    echo "Tests $result"
+    exit 0
+fi
+echo "Tests $result: $run_log"
+exit 1

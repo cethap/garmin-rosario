@@ -4,11 +4,13 @@ Copyright (c) 2026 Cesar Tapasco
 The code of this project is licensed under the MIT license (see LICENSE).
 
 The Bible quotes are not covered by the MIT license. They keep the terms of
-their sources, listed below. The quotes are in these files:
+their sources, listed below. The quotes are in these files, under the
+tables whose names start with "quotes", and in the files generated from them,
+resources/i18n/<language>.xml:
 
-  resources/strings/quotes.xml       English
-  resources-spa/strings/quotes.xml   Spanish
-  resources-fre/strings/quotes.xml   French
+  i18n/eng.json   English
+  i18n/spa.json   Spanish
+  i18n/fre.json   French
 
 English
   Douay-Rheims Bible, Challoner revision. Public domain.

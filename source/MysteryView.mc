@@ -115,28 +115,28 @@ module ReadingLayout {
     }
 }
 
-// The Bible quote of each mystery and its reference (resources/strings/quotes.xml), by
-// Rosary.mysteryIndex. Only the one being read is loaded.
+// The Bible quote of each mystery and its reference, by Rosary.mysteryIndex. Each set's quotes are a table
+// of their own, so a lookup loads only the set being read.
 module Quotes {
 
     function text(index as Number) as String {
-        var ids = [
-            Rez.Strings.Quote1, Rez.Strings.Quote2, Rez.Strings.Quote3, Rez.Strings.Quote4, Rez.Strings.Quote5,
-            Rez.Strings.Quote6, Rez.Strings.Quote7, Rez.Strings.Quote8, Rez.Strings.Quote9, Rez.Strings.Quote10,
-            Rez.Strings.Quote11, Rez.Strings.Quote12, Rez.Strings.Quote13, Rez.Strings.Quote14, Rez.Strings.Quote15,
-            Rez.Strings.Quote16, Rez.Strings.Quote17, Rez.Strings.Quote18, Rez.Strings.Quote19, Rez.Strings.Quote20
-        ] as Array<ResourceId>;
-        return WatchUi.loadResource(ids[index]) as String;
+        var keys = [
+            I18n.Quote1, I18n.Quote2, I18n.Quote3, I18n.Quote4, I18n.Quote5,
+            I18n.Quote6, I18n.Quote7, I18n.Quote8, I18n.Quote9, I18n.Quote10,
+            I18n.Quote11, I18n.Quote12, I18n.Quote13, I18n.Quote14, I18n.Quote15,
+            I18n.Quote16, I18n.Quote17, I18n.Quote18, I18n.Quote19, I18n.Quote20
+        ] as Array<Number>;
+        return I18n.text(keys[index]);
     }
 
     function reference(index as Number) as String {
-        var ids = [
-            Rez.Strings.Ref1, Rez.Strings.Ref2, Rez.Strings.Ref3, Rez.Strings.Ref4, Rez.Strings.Ref5,
-            Rez.Strings.Ref6, Rez.Strings.Ref7, Rez.Strings.Ref8, Rez.Strings.Ref9, Rez.Strings.Ref10,
-            Rez.Strings.Ref11, Rez.Strings.Ref12, Rez.Strings.Ref13, Rez.Strings.Ref14, Rez.Strings.Ref15,
-            Rez.Strings.Ref16, Rez.Strings.Ref17, Rez.Strings.Ref18, Rez.Strings.Ref19, Rez.Strings.Ref20
-        ] as Array<ResourceId>;
-        return WatchUi.loadResource(ids[index]) as String;
+        var keys = [
+            I18n.Ref1, I18n.Ref2, I18n.Ref3, I18n.Ref4, I18n.Ref5,
+            I18n.Ref6, I18n.Ref7, I18n.Ref8, I18n.Ref9, I18n.Ref10,
+            I18n.Ref11, I18n.Ref12, I18n.Ref13, I18n.Ref14, I18n.Ref15,
+            I18n.Ref16, I18n.Ref17, I18n.Ref18, I18n.Ref19, I18n.Ref20
+        ] as Array<Number>;
+        return I18n.text(keys[index]);
     }
 }
 

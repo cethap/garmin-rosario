@@ -55,8 +55,8 @@ class RosaryDelegate extends WatchUi.BehaviorDelegate {
 
     // "Reiniciar": asks "¿Reiniciar el rosario?"; ResetDelegate calls restart on YES.
     function confirmRestart() as Void {
-        var prompt = WatchUi.loadResource(Rez.Strings.ResetPrompt) as String;
-        WatchUi.pushView(new WatchUi.Confirmation(prompt), new ResetDelegate(self), WatchUi.SLIDE_IMMEDIATE);
+        WatchUi.pushView(new WatchUi.Confirmation(I18n.text(I18n.ResetPrompt)), new ResetDelegate(self),
+            WatchUi.SLIDE_IMMEDIATE);
     }
 
     // Starts today's rosary over: forgets the saved progress (the glance reads "Sin empezar" again),

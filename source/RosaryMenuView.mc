@@ -70,10 +70,7 @@ class RosaryMenuView extends WatchUi.View {
         _title = Rosary.mysteryTitle(set, decade);
         _titleLines = MainLayout.wrapTitle(_title);
         _ids = [:read, :reset] as Array<Symbol>;
-        _labels = [
-            WatchUi.loadResource(Rez.Strings.MenuRead) as String,
-            WatchUi.loadResource(Rez.Strings.MenuReset) as String
-        ] as Array<String>;
+        _labels = [I18n.text(I18n.MenuRead), I18n.text(I18n.MenuReset)] as Array<String>;
     }
 
     function title() as String {

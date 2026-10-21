@@ -11,7 +11,10 @@ class RosaryGlanceView extends WatchUi.GlanceView {
         GlanceView.initialize();
     }
 
+    // Resolves the language again on each refresh, so the glance follows a new choice in the widget and a
+    // new watch language.
     function onUpdate(dc as Dc) as Void {
+        I18n.reset();
         var app = getApp();
         var today = app.todayInfo();
         var set = Rosary.mysterySetForWeekday(today.day_of_week as Number);

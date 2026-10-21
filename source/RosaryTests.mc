@@ -4,10 +4,10 @@ import Toybox.Test;
 import Toybox.WatchUi;
 
 // Run No Evil unit tests for the Rosary module. They are excluded from debug and release
-// executables; scripts/test-all.sh builds and runs them once per language in the simulator.
+// executables; scripts/test-all.sh builds them once and runs them in the simulator.
 // A test about a text itself (a label, a title, a name) pins it in each language: those tests live in
 // Pins<Lang>.mc, with their checks in TextPins.mc. A test where a text only shows which item is on screen
-// compares it with its string resource (Rosary.loadText), so it holds in every language.
+// compares it with its lookup (I18n.text), and runs once in each language (TestLanguage.use).
 
 (:test)
 function sequenceHasSeventyTwoStepsEndingInSalve(logger as Logger) as Boolean {
@@ -344,24 +344,27 @@ function delegateSavesEachMoveAndFinishesOnTheSalve(logger as Logger) as Boolean
     var app = getApp();
     var today = 20261012;
     var before = Application.Storage.getValue(Rosary.PROGRESS_KEY);
-    var ok = false;
+    var ok = true;
     try {
-        Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
-        var view = new RosaryView(70, Rosary.JOYFUL);
-        var delegate = new RosaryDelegate(view, today);
-        var opened = app.loadProgress(today);
-        delegate.onSelect();
-        var atSalve = app.loadProgress(today);
-        delegate.onNextPage();
-        var done = app.loadProgress(today);
-        delegate.onSelect();
-        var stillDone = app.loadProgress(today);
-        delegate.onPreviousPage();
-        var back = app.loadProgress(today);
-        logger.debug("opened=" + opened + " atSalve=" + atSalve + " done=" + done + " stillDone=" + stillDone
-            + " back=" + back + " viewStep=" + view.step + " stored=" + Application.Storage.getValue(Rosary.PROGRESS_KEY));
-        ok = opened == Rosary.NOT_STARTED && atSalve == Rosary.LAST_STEP && done == Rosary.DONE
-            && stillDone == Rosary.DONE && back == Rosary.LAST_STEP && view.step == Rosary.LAST_STEP;
+        for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+            TestLanguage.use(logger, language);
+            Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
+            var view = new RosaryView(70, Rosary.JOYFUL);
+            var delegate = new RosaryDelegate(view, today);
+            var opened = app.loadProgress(today);
+            delegate.onSelect();
+            var atSalve = app.loadProgress(today);
+            delegate.onNextPage();
+            var done = app.loadProgress(today);
+            delegate.onSelect();
+            var stillDone = app.loadProgress(today);
+            delegate.onPreviousPage();
+            var back = app.loadProgress(today);
+            logger.debug("opened=" + opened + " atSalve=" + atSalve + " done=" + done + " stillDone=" + stillDone
+                + " back=" + back + " viewStep=" + view.step + " stored=" + Application.Storage.getValue(Rosary.PROGRESS_KEY));
+            ok = opened == Rosary.NOT_STARTED && atSalve == Rosary.LAST_STEP && done == Rosary.DONE
+                && stillDone == Rosary.DONE && back == Rosary.LAST_STEP && view.step == Rosary.LAST_STEP && ok;
+        }
     } finally {
         if (before == null) {
             Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
@@ -380,28 +383,31 @@ function resetStartsTodayOverOnlyWhenConfirmed(logger as Logger) as Boolean {
     var app = getApp();
     var today = 20261012;
     var before = Application.Storage.getValue(Rosary.PROGRESS_KEY);
-    var ok = false;
+    var ok = true;
     try {
-        Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
-        var view = new RosaryView(30, Rosary.JOYFUL);
-        var delegate = new RosaryDelegate(view, today);
-        delegate.onSelect();
-        var saved = app.loadProgress(today);
-        var confirmation = new ResetDelegate(delegate);
-        var answeredNo = confirmation.onResponse(WatchUi.CONFIRM_NO);
-        var kept = app.loadProgress(today);
-        var keptStep = view.step;
-        var answeredYes = confirmation.onResponse(WatchUi.CONFIRM_YES);
-        var cleared = app.loadProgress(today);
-        var clearedStep = view.step;
-        var glance = Rosary.glanceSummary(cleared);
-        delegate.onNextPage();
-        var again = app.loadProgress(today);
-        logger.debug("saved=" + saved + " kept=" + kept + " keptStep=" + keptStep + " cleared=" + cleared
-            + " clearedStep=" + clearedStep + " glance=" + glance + " again=" + again);
-        ok = answeredNo && answeredYes && saved == 31 && kept == 31 && keptStep == 31
-            && cleared == Rosary.NOT_STARTED && clearedStep == 0 && glance.equals(Rosary.loadText(Rez.Strings.GlanceNotStarted))
-            && again == 1;
+        for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+            TestLanguage.use(logger, language);
+            Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
+            var view = new RosaryView(30, Rosary.JOYFUL);
+            var delegate = new RosaryDelegate(view, today);
+            delegate.onSelect();
+            var saved = app.loadProgress(today);
+            var confirmation = new ResetDelegate(delegate);
+            var answeredNo = confirmation.onResponse(WatchUi.CONFIRM_NO);
+            var kept = app.loadProgress(today);
+            var keptStep = view.step;
+            var answeredYes = confirmation.onResponse(WatchUi.CONFIRM_YES);
+            var cleared = app.loadProgress(today);
+            var clearedStep = view.step;
+            var glance = Rosary.glanceSummary(cleared);
+            delegate.onNextPage();
+            var again = app.loadProgress(today);
+            logger.debug("saved=" + saved + " kept=" + kept + " keptStep=" + keptStep + " cleared=" + cleared
+                + " clearedStep=" + clearedStep + " glance=" + glance + " again=" + again);
+            ok = answeredNo && answeredYes && saved == 31 && kept == 31 && keptStep == 31
+                && cleared == Rosary.NOT_STARTED && clearedStep == 0 && glance.equals(I18n.glanceText(I18n.GlanceNotStarted))
+                && again == 1 && ok;
+        }
     } finally {
         if (before == null) {
             Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
@@ -417,30 +423,35 @@ function resetStartsTodayOverOnlyWhenConfirmed(logger as Logger) as Boolean {
 // the same bead.
 (:test)
 function menuSelectionStopsAtBothEndsAndBackCloses(logger as Logger) as Boolean {
-    var rosaryView = new RosaryView(31, Rosary.JOYFUL);
-    var rosary = new MenuFake.RecordingRosary(rosaryView);
-    var menu = new RosaryMenuView(rosaryView.mysterySet, Rosary.readingDecade(rosaryView.step));
-    var delegate = new RosaryMenuDelegate(menu, rosary);
-    var trail = [menu.selected];
-    var handled = delegate.onPreviousPage();
-    trail.add(menu.selected);
-    handled = delegate.onNextPage() && handled;
-    trail.add(menu.selected);
-    var resetSelected = menu.selectedId() == :reset;
-    handled = delegate.onNextPage() && handled;
-    trail.add(menu.selected);
-    handled = delegate.onMenu() && handled;
-    trail.add(menu.selected);
-    handled = delegate.onPreviousPage() && handled;
-    trail.add(menu.selected);
-    var readSelected = menu.selectedId() == :read;
-    var quiet = rosary.calls.size() == 0;
-    var back = delegate.onBack();
-    logger.debug("trail=" + trail + " handled=" + handled + " quiet=" + quiet + " back=" + back
-        + " calls=" + rosary.calls + " step=" + rosaryView.step);
-    return handled && quiet && back && resetSelected && readSelected
-        && trail.toString().equals([0, 0, 1, 1, 1, 0].toString())
-        && rosary.calls.toString().equals(["close"].toString()) && rosaryView.step == 31;
+    var ok = true;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        var rosaryView = new RosaryView(31, Rosary.JOYFUL);
+        var rosary = new MenuFake.RecordingRosary(rosaryView);
+        var menu = new RosaryMenuView(rosaryView.mysterySet, Rosary.readingDecade(rosaryView.step));
+        var delegate = new RosaryMenuDelegate(menu, rosary);
+        var trail = [menu.selected];
+        var handled = delegate.onPreviousPage();
+        trail.add(menu.selected);
+        handled = delegate.onNextPage() && handled;
+        trail.add(menu.selected);
+        var resetSelected = menu.selectedId() == :reset;
+        handled = delegate.onNextPage() && handled;
+        trail.add(menu.selected);
+        handled = delegate.onMenu() && handled;
+        trail.add(menu.selected);
+        handled = delegate.onPreviousPage() && handled;
+        trail.add(menu.selected);
+        var readSelected = menu.selectedId() == :read;
+        var quiet = rosary.calls.size() == 0;
+        var back = delegate.onBack();
+        logger.debug("trail=" + trail + " handled=" + handled + " quiet=" + quiet + " back=" + back
+            + " calls=" + rosary.calls + " step=" + rosaryView.step);
+        ok = handled && quiet && back && resetSelected && readSelected
+            && trail.toString().equals([0, 0, 1, 1, 1, 0].toString())
+            && rosary.calls.toString().equals(["close"].toString()) && rosaryView.step == 31 && ok;
+    }
+    return ok;
 }
 
 // START closes the menu, then opens the selected item over the rosary, so BACK from it lands on the
@@ -449,15 +460,20 @@ function menuSelectionStopsAtBothEndsAndBackCloses(logger as Logger) as Boolean 
 // the real one, which would push those views.
 (:test)
 function menuSelectOpensTheChosenItemOverTheRosary(logger as Logger) as Boolean {
-    var rosaryView = new RosaryView(31, Rosary.JOYFUL);
-    var reading = MenuFake.select(rosaryView, 0);
-    var restarting = MenuFake.select(rosaryView, 1);
-    logger.debug("read: " + reading + " restart: " + restarting + " step=" + rosaryView.step);
-    var read = Rosary.loadText(Rez.Strings.MenuRead);
-    var reset = Rosary.loadText(Rez.Strings.MenuReset);
-    return reading.toString().equals([true, read, ["close", "read"]].toString())
-        && restarting.toString().equals([true, reset, ["close", "restart"]].toString())
-        && rosaryView.step == 31;
+    var ok = true;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        var rosaryView = new RosaryView(31, Rosary.JOYFUL);
+        var reading = MenuFake.select(rosaryView, 0);
+        var restarting = MenuFake.select(rosaryView, 1);
+        logger.debug("read: " + reading + " restart: " + restarting + " step=" + rosaryView.step);
+        var read = I18n.text(I18n.MenuRead);
+        var reset = I18n.text(I18n.MenuReset);
+        ok = reading.toString().equals([true, read, ["close", "read"]].toString())
+            && restarting.toString().equals([true, reset, ["close", "restart"]].toString())
+            && rosaryView.step == 31 && ok;
+    }
+    return ok;
 }
 
 (:test)
@@ -507,42 +523,45 @@ module MenuFake {
 function readingScrollsBetweenBothEndsAndShowsEveryLine(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
     var ok = true;
-    for (var set = 0; set < 4; set++) {
-        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
-            var view = new MysteryView(set as Rosary.MysterySet, decade);
-            view.onLayout(dc);
-            var delegate = new MysteryDelegate(view);
-            var count = view.bodyLines().size();
-            var shown = new [count];
-            ScrollCheck.mark(shown, view.offset);
-            var handled = delegate.onPreviousPage();
-            var stuckAtTop = view.offset == 0;
-            var screens = 1;
-            while (screens <= count) {
-                var before = view.offset;
-                delegate.onNextPage();
-                if (view.offset == before) {
-                    break;
-                }
-                screens++;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var set = 0; set < 4; set++) {
+            for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+                var view = new MysteryView(set as Rosary.MysterySet, decade);
+                view.onLayout(dc);
+                var delegate = new MysteryDelegate(view);
+                var count = view.bodyLines().size();
+                var shown = new [count];
                 ScrollCheck.mark(shown, view.offset);
+                var handled = delegate.onPreviousPage();
+                var stuckAtTop = view.offset == 0;
+                var screens = 1;
+                while (screens <= count) {
+                    var before = view.offset;
+                    delegate.onNextPage();
+                    if (view.offset == before) {
+                        break;
+                    }
+                    screens++;
+                    ScrollCheck.mark(shown, view.offset);
+                }
+                var bottom = view.offset;
+                delegate.onNextPage();
+                var stuckAtBottom = view.offset == bottom && bottom == ReadingLayout.maxOffset(count);
+                var menu = delegate.onMenu();
+                var menuKept = view.offset == bottom;
+                while (view.offset > 0 && screens > 0) {
+                    delegate.onPreviousPage();
+                    screens--;
+                }
+                var backToTop = view.offset == 0;
+                var all = ScrollCheck.all(shown);
+                var screenCount = ScrollCheck.screens(count);
+                logger.debug(Quotes.reference(Rosary.mysteryIndex(set as Rosary.MysterySet, decade)) + ": " + count + " lines, "
+                    + screenCount + " screens, last offset " + bottom + " all=" + all + " stuckAtTop=" + stuckAtTop
+                    + " stuckAtBottom=" + stuckAtBottom + " menu=" + menu + " menuKept=" + menuKept + " backToTop=" + backToTop);
+                ok = ok && handled && stuckAtTop && stuckAtBottom && menu && menuKept && backToTop && all && screenCount <= 3;
             }
-            var bottom = view.offset;
-            delegate.onNextPage();
-            var stuckAtBottom = view.offset == bottom && bottom == ReadingLayout.maxOffset(count);
-            var menu = delegate.onMenu();
-            var menuKept = view.offset == bottom;
-            while (view.offset > 0 && screens > 0) {
-                delegate.onPreviousPage();
-                screens--;
-            }
-            var backToTop = view.offset == 0;
-            var all = ScrollCheck.all(shown);
-            var screenCount = ScrollCheck.screens(count);
-            logger.debug(Quotes.reference(Rosary.mysteryIndex(set as Rosary.MysterySet, decade)) + ": " + count + " lines, "
-                + screenCount + " screens, last offset " + bottom + " all=" + all + " stuckAtTop=" + stuckAtTop
-                + " stuckAtBottom=" + stuckAtBottom + " menu=" + menu + " menuKept=" + menuKept + " backToTop=" + backToTop);
-            ok = ok && handled && stuckAtTop && stuckAtBottom && menu && menuKept && backToTop && all && screenCount <= 3;
         }
     }
     return ok;
@@ -559,26 +578,29 @@ function readingScrollsBackThroughTheSamePages(logger as Logger) as Boolean {
     logger.debug("10 lines: down " + down + " up " + up);
     var ok = down.toString().equals([0, 4, 6].toString()) && up.toString().equals([6, 4, 0].toString());
     var dc = ScreenArea.measuringDc();
-    for (var set = 0; set < 4; set++) {
-        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
-            var view = new MysteryView(set as Rosary.MysterySet, decade);
-            view.onLayout(dc);
-            var delegate = new MysteryDelegate(view);
-            var count = view.bodyLines().size();
-            var shownDown = [view.offset];
-            for (var i = 0; i < count && delegate.onNextPage() && view.offset != shownDown[shownDown.size() - 1]; i++) {
-                shownDown.add(view.offset);
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var set = 0; set < 4; set++) {
+            for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+                var view = new MysteryView(set as Rosary.MysterySet, decade);
+                view.onLayout(dc);
+                var delegate = new MysteryDelegate(view);
+                var count = view.bodyLines().size();
+                var shownDown = [view.offset];
+                for (var i = 0; i < count && delegate.onNextPage() && view.offset != shownDown[shownDown.size() - 1]; i++) {
+                    shownDown.add(view.offset);
+                }
+                var shownUp = [view.offset];
+                for (var i = 0; i < count && delegate.onPreviousPage() && view.offset != shownUp[shownUp.size() - 1]; i++) {
+                    shownUp.add(view.offset);
+                }
+                var expected = ScrollCheck.expectedPages(count);
+                var same = shownDown.toString().equals(expected.toString())
+                    && shownUp.toString().equals(ScrollCheck.reversed(expected).toString());
+                logger.debug((same ? "same " : "DIFFERENT ") + Quotes.reference(Rosary.mysteryIndex(set as Rosary.MysterySet, decade))
+                    + ": " + count + " lines, down " + shownDown + " up " + shownUp + " expected " + expected);
+                ok = ok && same;
             }
-            var shownUp = [view.offset];
-            for (var i = 0; i < count && delegate.onPreviousPage() && view.offset != shownUp[shownUp.size() - 1]; i++) {
-                shownUp.add(view.offset);
-            }
-            var expected = ScrollCheck.expectedPages(count);
-            var same = shownDown.toString().equals(expected.toString())
-                && shownUp.toString().equals(ScrollCheck.reversed(expected).toString());
-            logger.debug((same ? "same " : "DIFFERENT ") + Quotes.reference(Rosary.mysteryIndex(set as Rosary.MysterySet, decade))
-                + ": " + count + " lines, down " + shownDown + " up " + shownUp + " expected " + expected);
-            ok = ok && same;
         }
     }
     return ok;
@@ -591,29 +613,32 @@ function readingLeavesTheProgressAndTheBeadAlone(logger as Logger) as Boolean {
     var app = getApp();
     var today = 20261012;
     var before = Application.Storage.getValue(Rosary.PROGRESS_KEY);
-    var ok = false;
+    var ok = true;
     try {
-        Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
-        var rosary = new RosaryView(30, Rosary.JOYFUL);
-        new RosaryDelegate(rosary, today).onSelect();
-        var saved = app.loadProgress(today);
-        var view = new MysteryView(rosary.mysterySet, Rosary.readingDecade(rosary.step));
-        var dc = ScreenArea.measuringDc();
-        view.onLayout(dc);
-        var reading = new MysteryDelegate(view);
-        reading.onNextPage();
-        reading.onNextPage();
-        reading.onPreviousPage();
-        reading.onMenu();
-        var after = app.loadProgress(today);
-        // The body opens with the 2nd mystery's name: its first line, wrapped as the view wraps it.
-        var name = Rosary.mysteryName(Rosary.JOYFUL, 2);
-        var firstLine = view.bodyLines()[0];
-        logger.debug("saved=" + saved + " after=" + after + " step=" + rosary.step + " title=" + view.titleLines()
-            + " first line='" + firstLine + "'");
-        ok = saved == 31 && after == 31 && rosary.step == 31
-            && view.titleLines().toString().equals(MainLayout.wrapTitle(Rosary.mysteryTitle(Rosary.JOYFUL, 2)).toString())
-            && firstLine.length() > 0 && name.find(firstLine) == 0 && firstLine.equals(ReadingLayout.wrapWords(dc, name)[0]);
+        for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+            TestLanguage.use(logger, language);
+            Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
+            var rosary = new RosaryView(30, Rosary.JOYFUL);
+            new RosaryDelegate(rosary, today).onSelect();
+            var saved = app.loadProgress(today);
+            var view = new MysteryView(rosary.mysterySet, Rosary.readingDecade(rosary.step));
+            var dc = ScreenArea.measuringDc();
+            view.onLayout(dc);
+            var reading = new MysteryDelegate(view);
+            reading.onNextPage();
+            reading.onNextPage();
+            reading.onPreviousPage();
+            reading.onMenu();
+            var after = app.loadProgress(today);
+            // The body opens with the 2nd mystery's name: its first line, wrapped as the view wraps it.
+            var name = Rosary.mysteryName(Rosary.JOYFUL, 2);
+            var firstLine = view.bodyLines()[0];
+            logger.debug("saved=" + saved + " after=" + after + " step=" + rosary.step + " title=" + view.titleLines()
+                + " first line='" + firstLine + "'");
+            ok = saved == 31 && after == 31 && rosary.step == 31
+                && view.titleLines().toString().equals(MainLayout.wrapTitle(Rosary.mysteryTitle(Rosary.JOYFUL, 2)).toString())
+                && firstLine.length() > 0 && name.find(firstLine) == 0 && firstLine.equals(ReadingLayout.wrapWords(dc, name)[0]) && ok;
+        }
     } finally {
         if (before == null) {
             Application.Storage.deleteValue(Rosary.PROGRESS_KEY);
