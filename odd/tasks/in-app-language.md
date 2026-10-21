@@ -49,7 +49,7 @@ Out of scope: a phone-side setting in Garmin Connect, other languages, other dev
 |----|------|-------|--------|
 | L1 | Research: how to load any language's strings at run time, measured in a scratch copy only. Compare per-language string ids in the base resources with per-language JSON resources, by memory in the widget and the glance, speed and test cost. Also confirm the glance can read the saved choice | delegated research worker (more than 5 lookups plus a prototype) | [x] No commit, research only; prototypes under the session scratchpad. Result: Design B, per-language `jsonData` arrays (see Progress) |
 | L2 | `refactor(i18n)`: load every text through a language-aware lookup that follows the watch language (Automatic); outputs unchanged; tests cover all three languages | delegated writer (2+ non-trivial files) | [x] 077c042 (see Progress) |
-| L3 | `feat(menu)`: language item in the hold-UP menu, a picker view, the saved choice, the glance honoring it | delegated writer | [ ] |
+| L3 | `feat(menu)`: language item in the hold-UP menu, a picker view, the saved choice, the glance honoring it | delegated writer (2+ non-trivial files) | [x] 67a727f (see Progress) |
 | L4 | `docs`: README, store listings and release notes for the option | delegated writer | [ ] |
 
 ## Acceptance criteria
@@ -107,6 +107,19 @@ Out of scope: a phone-side setting in Garmin Connect, other languages, other dev
     - The largest reading view held 880 bytes (`MEMORY_BUDGET` 3,072).
   - **Size:** 1,377 authored lines of code, tests and scripts (`git diff -w`), 777 lines of translations moved out of the XML, and 514 generated lines.
 
+- L3 done in 67a727f (delegated writer):
+  - **Menu:** "Read mystery", "Language", "Restart". Three large-font bars do not fit: the second already ends at row 149, where the bezel leaves the 2px margin, and a third would end at row 187, past the screen's 176 rows. So the menu keeps the large font and shows two items at a time. The window follows the selection, and a thin scroll bar sits right of the bars: a 1px track at x 166, rows 85..141, with a 3px thumb.
+  - **Picker** (`LanguageView`, `LanguageDelegate`): its title, "Language", sits beside the lens. The items are Automatic in the current language, then "English", "Español" and "Français", each in its own language. The saved choice carries a filled dot at the left of its bar and is selected first. UP and DOWN stop at the ends. START saves the choice, closes the picker and reloads the rosary's texts on the same bead. BACK changes nothing. Both lists share `BarListView` and `MenuLayout`.
+  - **Evidence:**
+    - TDD: with the picker's delegate an empty stub, its 3 tests failed, then passed once it was written. The same RED run found the scroll thumb 1px short of the margin at row 143, so the track ends at row 141.
+    - `scripts/test-all.sh`: translations OK, glance OK, PASSED 89, failed 0.
+    - Glyphs ñ, ç and á exist in the large font (11 to 12px).
+    - Debug `-w` and release `-r -w` (36,332 bytes): 0 warnings.
+  - **Memory:**
+    - The menu holds 648 to 656 bytes and the picker 512 to 568, against `MEMORY_BUDGET` 3,072.
+    - Widget, the main view plus the open picker: at most 27,216. Plus the largest reading view: at most 27,584 (Spanish). That includes the 2,128 bytes of new code, which stays resident. Before the feature: 27,264.
+  - **Size:** 826 authored lines and 16 generated.
+
 ## Next step
 
-L3: the menu's language item and the picker, then L4 (docs).
+L4: the README, the store listings and the release notes.
