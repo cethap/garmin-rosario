@@ -4,8 +4,8 @@ import Toybox.WatchUi;
 
 // Button input for the main widget screen: START and DOWN move to the next bead (on the Salve, they
 // pray it and finish the rosary), UP to the previous one, and holding UP (MENU) opens a menu to read
-// the current mystery or start the day over. BACK keeps its default behavior (exit); every move is
-// already saved.
+// the current mystery, choose the language or start the day over. BACK keeps its default behavior (exit);
+// every move is already saved.
 class RosaryDelegate extends WatchUi.BehaviorDelegate {
 
     private var _view as RosaryView;
@@ -32,31 +32,44 @@ class RosaryDelegate extends WatchUi.BehaviorDelegate {
         return moveTo(Rosary.prev(_view.step));
     }
 
-    // Hold UP: the app's menu with "Leer misterio" and "Reiniciar" under the title of the mystery it
-    // reads (RosaryMenuView); RosaryMenuDelegate answers it.
+    // Hold UP: the app's menu with "Read mystery", "Language" and "Restart" under the title of the mystery
+    // it reads (RosaryMenuView); RosaryMenuDelegate answers it.
     function onMenu() as Boolean {
         var menu = new RosaryMenuView(_view.mysterySet, Rosary.readingDecade(_view.step));
         WatchUi.pushView(menu, new RosaryMenuDelegate(menu, self), WatchUi.SLIDE_IMMEDIATE);
         return true;
     }
 
-    // Closes the menu, which sits on top of this screen: before the menu opens an item, so BACK from
-    // that item lands here, and on BACK in the menu.
+    // Closes the menu or the language picker, which sit on top of this screen: before the menu opens an
+    // item, so BACK from that item lands here, on BACK in either, and once a language is chosen.
     function closeMenu() as Void {
         WatchUi.popView(WatchUi.SLIDE_IMMEDIATE);
     }
 
-    // "Leer misterio": the reading view of the current mystery (Rosary.readingDecade). BACK returns
+    // "Language": the language picker (LanguageView); LanguageDelegate answers it. BACK returns here.
+    function chooseLanguage() as Void {
+        var picker = new LanguageView();
+        WatchUi.pushView(picker, new LanguageDelegate(picker, self), WatchUi.SLIDE_IMMEDIATE);
+    }
+
+    // A language was chosen in the picker, and saved: closes the picker and shows this screen in it, on the
+    // same bead.
+    function languageChanged() as Void {
+        closeMenu();
+        _view.reloadText();
+    }
+
+    // "Read mystery": the reading view of the current mystery (Rosary.readingDecade). BACK returns
     // here, on the same bead; nothing is saved and nothing vibrates.
     function readMystery() as Void {
         var view = new MysteryView(_view.mysterySet, Rosary.readingDecade(_view.step));
         WatchUi.pushView(view, new MysteryDelegate(view), WatchUi.SLIDE_LEFT);
     }
 
-    // "Reiniciar": asks "¿Reiniciar el rosario?"; ResetDelegate calls restart on YES.
+    // "Restart": asks "Restart the rosary?"; ResetDelegate calls restart on YES.
     function confirmRestart() as Void {
-        var prompt = WatchUi.loadResource(Rez.Strings.ResetPrompt) as String;
-        WatchUi.pushView(new WatchUi.Confirmation(prompt), new ResetDelegate(self), WatchUi.SLIDE_IMMEDIATE);
+        WatchUi.pushView(new WatchUi.Confirmation(I18n.text(I18n.ResetPrompt)), new ResetDelegate(self),
+            WatchUi.SLIDE_IMMEDIATE);
     }
 
     // Starts today's rosary over: forgets the saved progress (the glance reads "Sin empezar" again),

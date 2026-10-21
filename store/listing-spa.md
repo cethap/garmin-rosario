@@ -21,12 +21,12 @@ Funciones
 - Leer misterio: el nombre del misterio actual, una breve cita bíblica y su referencia.
 - El progreso se guarda durante el día: si sales y vuelves, continúas donde te quedaste. Cada día nuevo empieza desde el principio.
 - Desde la esfera del reloj, el botón DOWN muestra Rosario con los misterios del día y el progreso de hoy ("Gozosos" sobre "Misterio 2/5").
-- En español, inglés y francés, según el idioma del reloj.
+- En español, inglés, francés y latín: en el idioma del reloj o en el que elijas en el menú (Idioma); el latín, solo desde el menú. La elección se aplica a todas las pantallas, también a la que se ve desde la esfera, y se mantiene hasta que la cambies.
 
 Controles
 - START (arriba a la derecha) o DOWN (abajo a la izquierda): cuenta siguiente (en la Salve: terminar el Rosario).
 - UP (en el centro a la izquierda): cuenta anterior.
-- Mantener pulsado UP: menú con "Leer misterio" y "Reiniciar" (empezar de nuevo el Rosario del día, tras una confirmación).
+- Mantener pulsado UP: menú con "Leer misterio", "Idioma" (Automático, English, Español, Français o Latina) y "Reiniciar" (empezar de nuevo el Rosario del día, tras una confirmación).
 - BACK (abajo a la derecha): salir. El progreso ya está guardado.
 - Desde la esfera del reloj, pulsa DOWN hasta llegar a Rosario y luego START para abrirlo.
 
@@ -34,7 +34,7 @@ Para tener en cuenta
 - Gratuita. Sin anuncios y sin cuenta.
 - No usa ningún permiso: no necesita teléfono, conexión a internet ni sensores. El progreso se queda en el reloj.
 - Requiere Connect IQ 3.4 o posterior en el reloj.
-- Citas bíblicas: "El Libro del Pueblo de Dios", publicado en el sitio de la Santa Sede (Copyright © Libreria Editrice Vaticana). Las citas en inglés provienen de la Biblia Douay-Rheims y las citas en francés de la Biblia Crampon de 1923, ambas de dominio público.
+- Citas bíblicas: "El Libro del Pueblo de Dios", publicado en el sitio de la Santa Sede (Copyright © Libreria Editrice Vaticana). Las citas en inglés provienen de la Biblia Douay-Rheims, las citas en francés de la Biblia Crampon de 1923 y las citas en latín de la Vulgata Clementina, todas de dominio público.
 - Código fuente, preguntas e informes de errores: https://github.com/cethap/garmin-rosario
 
 ## Permisos

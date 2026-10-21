@@ -21,12 +21,12 @@ Features
 - Read mystery: the name of the current mystery, a short Bible quote and its reference.
 - Your progress is saved for the day: leave and come back, and you continue where you were. A new day starts from the beginning.
 - The glance shows the day's mysteries and today's progress ("Joyful" over "Mystery 2/5").
-- In English, Spanish and French, following the watch's language.
+- In English, Spanish, French and Latin: in the watch's language, or in the one you choose in the menu (Language); Latin only from the menu. The choice applies to every screen, the glance included, and stays until you change it.
 
 Controls
 - START (upper right) or DOWN (lower left): next bead (on the Hail Holy Queen: finish the Rosary).
 - UP (middle left): previous bead.
-- Hold UP: menu with "Read mystery" and "Restart" (start today's Rosary over, after a confirmation).
+- Hold UP: menu with "Read mystery", "Language" (Automatic, English, Español, Français or Latina) and "Restart" (start today's Rosary over, after a confirmation).
 - BACK (lower right): exit. Your progress is already saved.
 - From the watch face, press DOWN to reach the Rosario glance, then START to open it.
 
@@ -34,7 +34,7 @@ Good to know
 - Free. No ads, no account.
 - Uses no permissions: it needs no phone, no internet connection and no sensors. Your progress stays on the watch.
 - Requires Connect IQ 3.4 or later on the watch.
-- Bible quotes: Douay-Rheims Bible, Challoner revision (public domain), from drbo.org. The Spanish quotes come from "El Libro del Pueblo de Dios" (Copyright © Libreria Editrice Vaticana), and the French ones from the Bible Crampon 1923 (public domain).
+- Bible quotes: Douay-Rheims Bible, Challoner revision (public domain), from drbo.org. The Spanish quotes come from "El Libro del Pueblo de Dios" (Copyright © Libreria Editrice Vaticana), the French ones from the Bible Crampon 1923 (public domain), and the Latin ones from the Clementine Vulgate (public domain).
 - Source code, questions and bug reports: https://github.com/cethap/garmin-rosario
 
 ## Permissions

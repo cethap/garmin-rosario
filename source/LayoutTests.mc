@@ -1,3 +1,4 @@
+import Toybox.Application;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.System;
@@ -7,7 +8,8 @@ import Toybox.WatchUi;
 // Checks that drawn text stays inside the visible area of the Instinct 2: the per-row table the
 // watch face uses (VisibleArea.mc), with a 2px margin. The Avemaría number is the one text drawn in
 // the subscreen window instead, a disk of radius 31 around (144,31) inside the lens ring.
-// Text boxes span the full font height (ascent + descent), as accented capitals reach the ascent.
+// Text boxes span the full font height (ascent + descent), as accented capitals reach the ascent. Every
+// test that measures a text measures it in each language in turn (TestLanguage.use).
 (:test)
 module ScreenArea {
 
@@ -125,26 +127,29 @@ function glanceTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
     var seen = {} as Dictionary<String, Boolean>;
     var ok = true;
-    for (var set = 0; set < 4; set++) {
-        for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
-            var items = Layout.glancePlan(set as Rosary.MysterySet, position, Layout.GLANCE_HEIGHT);
-            ok = ok && items.size() == 2;
-            for (var i = 0; i < items.size(); i++) {
-                var item = items[i];
-                var key = item.text + "@" + item.x + "," + item.y;
-                if (seen.hasKey(key)) {
-                    continue;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var set = 0; set < 4; set++) {
+            for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
+                var items = Layout.glancePlan(set as Rosary.MysterySet, position, Layout.GLANCE_HEIGHT);
+                ok = ok && items.size() == 2;
+                for (var i = 0; i < items.size(); i++) {
+                    var item = items[i];
+                    var key = item.text + "@" + item.x + "," + item.y;
+                    if (seen.hasKey(key)) {
+                        continue;
+                    }
+                    seen[key] = true;
+                    var box = ScreenArea.measure(dc, item);
+                    var screen = ScreenArea.offset(box, ScreenArea.GLANCE_X, ScreenArea.GLANCE_Y);
+                    var fits = item.font == Graphics.FONT_MEDIUM
+                        && ScreenArea.boxInRect(box, 0, 0, ScreenArea.GLANCE_WIDTH, Layout.GLANCE_HEIGHT)
+                        && ScreenArea.visible(screen);
+                    logger.debug((fits ? "fits " : "OUT ") + Graphics.getFontHeight(item.font) + "px "
+                        + ScreenArea.describeVisible(item.text, screen) + ", " + (ScreenArea.GLANCE_WIDTH - box[2]).format("%.0f")
+                        + "px to the content's right edge");
+                    ok = ok && fits;
                 }
-                seen[key] = true;
-                var box = ScreenArea.measure(dc, item);
-                var screen = ScreenArea.offset(box, ScreenArea.GLANCE_X, ScreenArea.GLANCE_Y);
-                var fits = item.font == Graphics.FONT_MEDIUM
-                    && ScreenArea.boxInRect(box, 0, 0, ScreenArea.GLANCE_WIDTH, Layout.GLANCE_HEIGHT)
-                    && ScreenArea.visible(screen);
-                logger.debug((fits ? "fits " : "OUT ") + Graphics.getFontHeight(item.font) + "px "
-                    + ScreenArea.describeVisible(item.text, screen) + ", " + (ScreenArea.GLANCE_WIDTH - box[2]).format("%.0f")
-                    + "px to the content's right edge");
-                ok = ok && fits;
             }
         }
     }
@@ -161,30 +166,33 @@ function glanceLinesReadAsOneBlock(logger as Logger) as Boolean {
     var line = Graphics.getFontHeight(font);
     var ok = true;
     var seen = {} as Dictionary<String, Boolean>;
-    for (var set = 0; set < 4; set++) {
-        for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
-            var items = Layout.glancePlan(set as Rosary.MysterySet, position, Layout.GLANCE_HEIGHT);
-            var key = items[0].text + "|" + items[1].text;
-            if (seen.hasKey(key)) {
-                continue;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var set = 0; set < 4; set++) {
+            for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
+                var items = Layout.glancePlan(set as Rosary.MysterySet, position, Layout.GLANCE_HEIGHT);
+                var key = items[0].text + "|" + items[1].text;
+                if (seen.hasKey(key)) {
+                    continue;
+                }
+                seen[key] = true;
+                var title = ScreenArea.measure(dc, items[0]);
+                var status = ScreenArea.measure(dc, items[1]);
+                var gap = status[1] - title[3];
+                var above = title[1];
+                var below = Layout.GLANCE_HEIGHT - status[3];
+                var spread = above - below;
+                var block = items.size() == 2 && items[0].font == font && items[1].font == font
+                    && items[0].x == Layout.GLANCE_LEFT && items[1].x == Layout.GLANCE_LEFT && Layout.GLANCE_LEFT == 9
+                    && items[1].y - items[0].y == line && gap == 0 && above >= 0 && below >= 0 && spread >= -1 && spread <= 1;
+                if (!block || position == Rosary.NOT_STARTED) {
+                    logger.debug((block ? "block " : "APART ") + ScreenArea.describe(items[0].text, title) + " over "
+                        + ScreenArea.describe(items[1].text, status) + " gap " + gap.format("%.0f") + ", "
+                        + above.format("%.0f") + "px above, " + below.format("%.0f") + "px below; medium " + line + "px (ascent "
+                        + Graphics.getFontAscent(font) + ", descent " + Graphics.getFontDescent(font) + ")");
+                }
+                ok = ok && block;
             }
-            seen[key] = true;
-            var title = ScreenArea.measure(dc, items[0]);
-            var status = ScreenArea.measure(dc, items[1]);
-            var gap = status[1] - title[3];
-            var above = title[1];
-            var below = Layout.GLANCE_HEIGHT - status[3];
-            var spread = above - below;
-            var block = items.size() == 2 && items[0].font == font && items[1].font == font
-                && items[0].x == Layout.GLANCE_LEFT && items[1].x == Layout.GLANCE_LEFT && Layout.GLANCE_LEFT == 9
-                && items[1].y - items[0].y == line && gap == 0 && above >= 0 && below >= 0 && spread >= -1 && spread <= 1;
-            if (!block || position == Rosary.NOT_STARTED) {
-                logger.debug((block ? "block " : "APART ") + ScreenArea.describe(items[0].text, title) + " over "
-                    + ScreenArea.describe(items[1].text, status) + " gap " + gap.format("%.0f") + ", "
-                    + above.format("%.0f") + "px above, " + below.format("%.0f") + "px below; medium " + line + "px (ascent "
-                    + Graphics.getFontAscent(font) + ", descent " + Graphics.getFontDescent(font) + ")");
-            }
-            ok = ok && block;
         }
     }
     return ok;
@@ -221,29 +229,32 @@ function mainScreenTextStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var seen = {} as Dictionary<String, Boolean>;
     var fonts = {} as Dictionary<String, Graphics.FontType>;
     var ok = true;
-    for (var set = 0; set < 4; set++) {
-        var titles = {} as Dictionary<Number, Array<String>>;
-        var mysteries = {} as Dictionary<Number, Array<String>>;
-        for (var step = 0; step <= Rosary.DONE; step++) {
-            var decade = Rosary.decadeAt(step);
-            if (!titles.hasKey(decade)) {
-                // Wrapping is slow, and both texts depend only on the decade.
-                var title = Rosary.decadeTitle(step, set as Rosary.MysterySet);
-                var mystery = Rosary.subtitle(step, set as Rosary.MysterySet);
-                titles[decade] = MainLayout.wrapTitle(title);
-                mysteries[decade] = MainLayout.wrapMystery(mystery);
-                ok = LayoutCheck.wrapsWhole(title, titles[decade] as Array<String>, 3, logger) && ok;
-                ok = LayoutCheck.wrapsWhole(mystery, mysteries[decade] as Array<String>, 2, logger) && ok;
-            }
-            var prayer = Rosary.prayerLabel(step);
-            if (!fonts.hasKey(prayer)) {
-                fonts[prayer] = MainLayout.prayerFont(dc, prayer);
-            }
-            var items = MainLayout.plan(step, "00:00", clockFont, titles[decade] as Array<String>,
-                mysteries[decade] as Array<String>, prayer, fonts[prayer] as Graphics.FontType, ring[0], ring[1]);
-            ok = LayoutCheck.blocksInOrder(dc, items, logger) && ok;
-            for (var i = 0; i < items.size(); i++) {
-                ok = LayoutCheck.mainItemFits(dc, items[i], seen, logger) && ok;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var set = 0; set < 4; set++) {
+            var titles = {} as Dictionary<Number, Array<String>>;
+            var mysteries = {} as Dictionary<Number, Array<String>>;
+            for (var step = 0; step <= Rosary.DONE; step++) {
+                var decade = Rosary.decadeAt(step);
+                if (!titles.hasKey(decade)) {
+                    // Wrapping is slow, and both texts depend only on the decade.
+                    var title = Rosary.decadeTitle(step, set as Rosary.MysterySet);
+                    var mystery = Rosary.subtitle(step, set as Rosary.MysterySet);
+                    titles[decade] = MainLayout.wrapTitle(title);
+                    mysteries[decade] = MainLayout.wrapMystery(mystery);
+                    ok = LayoutCheck.wrapsWhole(title, titles[decade] as Array<String>, 3, logger) && ok;
+                    ok = LayoutCheck.wrapsWhole(mystery, mysteries[decade] as Array<String>, 2, logger) && ok;
+                }
+                var prayer = Rosary.prayerLabel(step);
+                if (!fonts.hasKey(prayer)) {
+                    fonts[prayer] = MainLayout.prayerFont(dc, prayer);
+                }
+                var items = MainLayout.plan(step, "00:00", clockFont, titles[decade] as Array<String>,
+                    mysteries[decade] as Array<String>, prayer, fonts[prayer] as Graphics.FontType, ring[0], ring[1]);
+                ok = LayoutCheck.blocksInOrder(dc, items, logger) && ok;
+                for (var i = 0; i < items.size(); i++) {
+                    ok = LayoutCheck.mainItemFits(dc, items[i], seen, logger) && ok;
+                }
             }
         }
     }
@@ -262,18 +273,21 @@ function mainScreenClockStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var ring = MainLayout.ring();
     var seen = {} as Dictionary<String, Boolean>;
     var minutes = [0, 11, 22, 33, 44, 55, 6, 17, 28, 39];
-    // The screen on the Credo, around the clock.
-    var title = MainLayout.wrapTitle(Rosary.decadeTitle(0, Rosary.JOYFUL));
-    var mystery = MainLayout.wrapMystery(Rosary.subtitle(0, Rosary.JOYFUL));
-    var prayer = Rosary.prayerLabel(0);
-    var prayerFont = MainLayout.prayerFont(dc, prayer);
     var ok = true;
-    for (var hour = 0; hour < 24; hour++) {
-        for (var m = 0; m < minutes.size(); m++) {
-            for (var mode = 0; mode < 2; mode++) {
-                var text = Rosary.formatClock(hour, minutes[m], mode == 0);
-                var items = MainLayout.plan(0, text, clockFont, title, mystery, prayer, prayerFont, ring[0], ring[1]);
-                ok = LayoutCheck.mainItemFits(dc, items[0], seen, logger) && ok;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        // The screen on the Credo, around the clock.
+        var title = MainLayout.wrapTitle(Rosary.decadeTitle(0, Rosary.JOYFUL));
+        var mystery = MainLayout.wrapMystery(Rosary.subtitle(0, Rosary.JOYFUL));
+        var prayer = Rosary.prayerLabel(0);
+        var prayerFont = MainLayout.prayerFont(dc, prayer);
+        for (var hour = 0; hour < 24; hour++) {
+            for (var m = 0; m < minutes.size(); m++) {
+                for (var mode = 0; mode < 2; mode++) {
+                    var text = Rosary.formatClock(hour, minutes[m], mode == 0);
+                    var items = MainLayout.plan(0, text, clockFont, title, mystery, prayer, prayerFont, ring[0], ring[1]);
+                    ok = LayoutCheck.mainItemFits(dc, items[0], seen, logger) && ok;
+                }
             }
         }
     }
@@ -289,25 +303,28 @@ function prayerLabelUsesTheLargestFontThatFits(logger as Logger) as Boolean {
     var fonts = [Graphics.FONT_LARGE, Graphics.FONT_MEDIUM, Graphics.FONT_SMALL, Graphics.FONT_TINY] as Array<Graphics.FontType>;
     var seen = {} as Dictionary<String, Boolean>;
     var ok = true;
-    for (var step = 0; step <= Rosary.LAST_STEP; step++) {
-        var label = Rosary.prayerLabel(step);
-        if (seen.hasKey(label)) {
-            continue;
-        }
-        seen[label] = true;
-        var font = MainLayout.prayerFont(dc, label);
-        var box = ScreenArea.measure(dc, MainLayout.prayerItem(label, font));
-        var fits = ScreenArea.visible(box);
-        var largerFit = "";
-        for (var i = 0; i < fonts.size() && fonts[i] != font; i++) {
-            if (ScreenArea.visible(ScreenArea.measure(dc, MainLayout.prayerItem(label, fonts[i])))) {
-                largerFit += " " + ScreenArea.fontName(fonts[i]);
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var step = 0; step <= Rosary.LAST_STEP; step++) {
+            var label = Rosary.prayerLabel(step);
+            if (seen.hasKey(label)) {
+                continue;
             }
+            seen[label] = true;
+            var font = MainLayout.prayerFont(dc, label);
+            var box = ScreenArea.measure(dc, MainLayout.prayerItem(label, font));
+            var fits = ScreenArea.visible(box);
+            var largerFit = "";
+            for (var i = 0; i < fonts.size() && fonts[i] != font; i++) {
+                if (ScreenArea.visible(ScreenArea.measure(dc, MainLayout.prayerItem(label, fonts[i])))) {
+                    largerFit += " " + ScreenArea.fontName(fonts[i]);
+                }
+            }
+            var right = fits && largerFit.length() == 0;
+            logger.debug((right ? "fits " : "WRONG ") + ScreenArea.fontName(font) + " " + ScreenArea.describeVisible(label, box)
+                + (largerFit.length() > 0 ? ", also fits" + largerFit : ""));
+            ok = ok && right;
         }
-        var right = fits && largerFit.length() == 0;
-        logger.debug((right ? "fits " : "WRONG ") + ScreenArea.fontName(font) + " " + ScreenArea.describeVisible(label, box)
-            + (largerFit.length() > 0 ? ", also fits" + largerFit : ""));
-        ok = ok && right;
     }
     return ok;
 }
@@ -327,21 +344,24 @@ function readingTextStaysClearOfTheLens(logger as Logger) as Boolean {
     logger.debug((ok ? "fits " : "OUT ") + ScreenArea.describeVisible("body window", window)
         + " lines=" + ReadingLayout.visibleLines());
     var seen = {} as Dictionary<String, Boolean>;
-    for (var set = 0; set < 4; set++) {
-        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
-            var view = new MysteryView(set as Rosary.MysterySet, decade);
-            view.onLayout(dc);
-            var body = view.bodyLines();
-            ok = LayoutCheck.wrapsWhole(Rosary.mysteryTitle(set as Rosary.MysterySet, decade), view.titleLines(), 3, logger) && ok;
-            ok = ReadingCheck.bodyWrapsWhole(set as Rosary.MysterySet, decade, body, logger) && ok;
-            var header = ReadingLayout.headerPlan(view.titleLines(), decade, ring[0], ring[1]);
-            for (var i = 0; i < header.size(); i++) {
-                ok = LayoutCheck.mainItemFits(dc, header[i], seen, logger) && ok;
-                ok = ReadingCheck.aboveTheWindow(dc, header[i], logger) && ok;
-            }
-            var last = ReadingLayout.maxOffset(body.size());
-            for (var offset = 0; offset <= last; offset++) {
-                ok = ReadingCheck.bodyInsideTheWindow(dc, body, offset, logger) && ok;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var set = 0; set < 4; set++) {
+            for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+                var view = new MysteryView(set as Rosary.MysterySet, decade);
+                view.onLayout(dc);
+                var body = view.bodyLines();
+                ok = LayoutCheck.wrapsWhole(Rosary.mysteryTitle(set as Rosary.MysterySet, decade), view.titleLines(), 3, logger) && ok;
+                ok = ReadingCheck.bodyWrapsWhole(set as Rosary.MysterySet, decade, body, logger) && ok;
+                var header = ReadingLayout.headerPlan(view.titleLines(), decade, ring[0], ring[1]);
+                for (var i = 0; i < header.size(); i++) {
+                    ok = LayoutCheck.mainItemFits(dc, header[i], seen, logger) && ok;
+                    ok = ReadingCheck.aboveTheWindow(dc, header[i], logger) && ok;
+                }
+                var last = ReadingLayout.maxOffset(body.size());
+                for (var offset = 0; offset <= last; offset++) {
+                    ok = ReadingCheck.bodyInsideTheWindow(dc, body, offset, logger) && ok;
+                }
             }
         }
     }
@@ -357,19 +377,22 @@ function readingFontHasEveryGlyph(logger as Logger) as Boolean {
     var missing = dc.getTextWidthInPixels("中", Graphics.FONT_TINY);
     var checked = {} as Dictionary<String, Number>;
     var ok = true;
-    for (var index = 0; index < Rosary.DECADES * 4; index++) {
-        var name = Rosary.mysteryName((index / Rosary.DECADES) as Rosary.MysterySet, index % Rosary.DECADES + 1);
-        var texts = [Quotes.text(index), Quotes.reference(index), name] as Array<String>;
-        for (var t = 0; t < texts.size(); t++) {
-            var chars = texts[t].toCharArray();
-            for (var c = 0; c < chars.size(); c++) {
-                var glyph = chars[c].toString();
-                if (chars[c].toNumber() < 128 || checked.hasKey(glyph)) {
-                    continue;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var index = 0; index < Rosary.DECADES * 4; index++) {
+            var name = Rosary.mysteryName((index / Rosary.DECADES) as Rosary.MysterySet, index % Rosary.DECADES + 1);
+            var texts = [Quotes.text(index), Quotes.reference(index), name] as Array<String>;
+            for (var t = 0; t < texts.size(); t++) {
+                var chars = texts[t].toCharArray();
+                for (var c = 0; c < chars.size(); c++) {
+                    var glyph = chars[c].toString();
+                    if (chars[c].toNumber() < 128 || checked.hasKey(glyph)) {
+                        continue;
+                    }
+                    var width = dc.getTextWidthInPixels(glyph, Graphics.FONT_TINY);
+                    checked[glyph] = width;
+                    ok = ok && width > 0 && width != missing;
                 }
-                var width = dc.getTextWidthInPixels(glyph, Graphics.FONT_TINY);
-                checked[glyph] = width;
-                ok = ok && width > 0 && width != missing;
             }
         }
     }
@@ -379,9 +402,10 @@ function readingFontHasEveryGlyph(logger as Logger) as Boolean {
 
 // Every character the other screens draw has a glyph in the font they draw it with, as the reading view's
 // in the tiny font above: the glance's labels (medium), the titles and the mystery names (tiny), the prayer
-// labels (in MainLayout.prayerFont), the menu's labels (large) and the reset prompt, which the system's
-// confirmation draws in a font of its own, so in every font. French needs é è ê à ç ô Ô É ’ and the
-// no-break space, which every font has.
+// labels (in MainLayout.prayerFont), the labels of the menu and the language picker (large), the picker's
+// title (tiny) and the reset prompt, which the system's confirmation draws in a font of its own, so in every
+// font. French needs é è ê à ç ô Ô É ’ and the no-break space, which every font has; the picker needs ñ and
+// ç in the large font ("Español", "Français"). Latin needs only "…" beyond ASCII, as English does.
 (:test)
 function screenFontsHaveEveryGlyph(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
@@ -391,35 +415,41 @@ function screenFontsHaveEveryGlyph(logger as Logger) as Boolean {
     // One step of the opening, of each decade and of the closing: the title and the line under it depend
     // only on the decade.
     var decadeSteps = [0, 6, 19, 32, 45, 58, Rosary.LAST_STEP];
-    for (var set = 0; set < 4; set++) {
-        texts.add(Rosary.glanceTitle(set as Rosary.MysterySet));
-        fonts.add(Graphics.FONT_MEDIUM);
-        for (var i = 0; i < decadeSteps.size(); i++) {
-            texts.add(Rosary.decadeTitle(decadeSteps[i], set as Rosary.MysterySet));
-            fonts.add(tiny);
-            texts.add(Rosary.subtitle(decadeSteps[i], set as Rosary.MysterySet));
-            fonts.add(tiny);
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var set = 0; set < 4; set++) {
+            texts.add(Rosary.glanceTitle(set as Rosary.MysterySet));
+            fonts.add(Graphics.FONT_MEDIUM);
+            for (var i = 0; i < decadeSteps.size(); i++) {
+                texts.add(Rosary.decadeTitle(decadeSteps[i], set as Rosary.MysterySet));
+                fonts.add(tiny);
+                texts.add(Rosary.subtitle(decadeSteps[i], set as Rosary.MysterySet));
+                fonts.add(tiny);
+            }
         }
-    }
-    for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
-        texts.add(Rosary.glanceSummary(position));
-        fonts.add(Graphics.FONT_MEDIUM);
-    }
-    for (var step = 0; step <= Rosary.LAST_STEP; step++) {
-        var label = Rosary.prayerLabel(step);
-        texts.add(label);
-        fonts.add(MainLayout.prayerFont(dc, label));
-    }
-    var menu = new RosaryMenuView(Rosary.JOYFUL, 1).labels();
-    for (var i = 0; i < menu.size(); i++) {
-        texts.add(menu[i]);
-        fonts.add(Graphics.FONT_LARGE);
-    }
-    var prompt = Rosary.loadText(Rez.Strings.ResetPrompt);
-    var all = [Graphics.FONT_XTINY, Graphics.FONT_TINY, Graphics.FONT_SMALL, Graphics.FONT_MEDIUM, Graphics.FONT_LARGE];
-    for (var i = 0; i < all.size(); i++) {
-        texts.add(prompt);
-        fonts.add(all[i] as Graphics.FontType);
+        for (var position = Rosary.NOT_STARTED; position <= Rosary.DONE; position++) {
+            texts.add(Rosary.glanceSummary(position));
+            fonts.add(Graphics.FONT_MEDIUM);
+        }
+        for (var step = 0; step <= Rosary.LAST_STEP; step++) {
+            var label = Rosary.prayerLabel(step);
+            texts.add(label);
+            fonts.add(MainLayout.prayerFont(dc, label));
+        }
+        var menu = new RosaryMenuView(Rosary.JOYFUL, 1).labels();
+        menu.addAll(LanguageLayout.labels());
+        for (var i = 0; i < menu.size(); i++) {
+            texts.add(menu[i]);
+            fonts.add(Graphics.FONT_LARGE);
+        }
+        texts.add(I18n.text(I18n.MenuLanguage));
+        fonts.add(tiny);
+        var prompt = I18n.text(I18n.ResetPrompt);
+        var all = [Graphics.FONT_XTINY, Graphics.FONT_TINY, Graphics.FONT_SMALL, Graphics.FONT_MEDIUM, Graphics.FONT_LARGE];
+        for (var i = 0; i < all.size(); i++) {
+            texts.add(prompt);
+            fonts.add(all[i] as Graphics.FontType);
+        }
     }
     var checked = {} as Dictionary<String, Number>;
     var ok = true;
@@ -438,22 +468,25 @@ function screenFontsHaveEveryGlyph(logger as Logger) as Boolean {
 function readingNeverBreaksAtPunctuation(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
     var ok = true;
-    for (var set = 0; set < 4; set++) {
-        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
-            var view = new MysteryView(set as Rosary.MysterySet, decade);
-            view.onLayout(dc);
-            var lines = view.bodyLines();
-            for (var i = 0; i < lines.size(); i++) {
-                var chars = lines[i].toCharArray();
-                var first = chars[0];
-                var last = chars[chars.size() - 1];
-                var bad = first == ':' || first == ';' || first == '?' || first == '!' || first == '»' || first == ','
-                    || first == '.' || last == '«';
-                if (bad) {
-                    logger.debug("BREAK " + Quotes.reference(Rosary.mysteryIndex(set as Rosary.MysterySet, decade)) + " line "
-                        + i + ": '" + lines[i] + "'");
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var set = 0; set < 4; set++) {
+            for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+                var view = new MysteryView(set as Rosary.MysterySet, decade);
+                view.onLayout(dc);
+                var lines = view.bodyLines();
+                for (var i = 0; i < lines.size(); i++) {
+                    var chars = lines[i].toCharArray();
+                    var first = chars[0];
+                    var last = chars[chars.size() - 1];
+                    var bad = first == ':' || first == ';' || first == '?' || first == '!' || first == '»' || first == ','
+                        || first == '.' || last == '«';
+                    if (bad) {
+                        logger.debug("BREAK " + Quotes.reference(Rosary.mysteryIndex(set as Rosary.MysterySet, decade)) + " line "
+                            + i + ": '" + lines[i] + "'");
+                    }
+                    ok = ok && !bad;
                 }
-                ok = ok && !bad;
             }
         }
     }
@@ -493,38 +526,44 @@ function readingViewDrawsEveryScrollPosition(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
     // Warm-up: the first view measured also pays a one-time cost, so it is measured and left out. The
     // bound then holds whichever test or view runs first.
+    TestLanguage.use(logger, I18n.ENG);
     var warmUp = ReadingCheck.memoryHeld(dc, Rosary.JOYFUL, 1);
-    var held = [] as Array<Number>;
     var largest = 0;
     var drawn = 0;
-    for (var set = 0; set < 4; set++) {
-        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
-            var bytes = ReadingCheck.memoryHeld(dc, set as Rosary.MysterySet, decade);
-            held.add(bytes);
-            largest = bytes > largest ? bytes : largest;
-            var view = new MysteryView(set as Rosary.MysterySet, decade);
-            view.onLayout(dc);
-            var last = ReadingLayout.maxOffset(view.bodyLines().size());
-            for (var offset = 0; offset <= last; offset++) {
-                view.offset = offset;
-                view.onUpdate(dc);
-                drawn++;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        var held = [] as Array<Number>;
+        for (var set = 0; set < 4; set++) {
+            for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+                var bytes = ReadingCheck.memoryHeld(dc, set as Rosary.MysterySet, decade);
+                held.add(bytes);
+                largest = bytes > largest ? bytes : largest;
+                var view = new MysteryView(set as Rosary.MysterySet, decade);
+                view.onLayout(dc);
+                var last = ReadingLayout.maxOffset(view.bodyLines().size());
+                for (var offset = 0; offset <= last; offset++) {
+                    view.offset = offset;
+                    view.onUpdate(dc);
+                    drawn++;
+                }
             }
         }
+        logger.debug("per mystery " + held);
     }
     var stats = System.getSystemStats();
     logger.debug("drew " + drawn + " screens; warm-up view " + warmUp + " bytes; largest open view " + largest + " bytes (budget "
-        + ReadingCheck.MEMORY_BUDGET + "); per mystery " + held + "; test app used " + stats.usedMemory + " of " + stats.totalMemory);
-    return drawn >= 20 && largest > 0 && largest < ReadingCheck.MEMORY_BUDGET;
+        + ReadingCheck.MEMORY_BUDGET + "); test app used " + stats.usedMemory + " of " + stats.totalMemory);
+    return drawn >= 20 * I18n.LANGUAGE_COUNT && largest > 0 && largest < ReadingCheck.MEMORY_BUDGET;
 }
 
-// The hold-UP menu, drawn by the app because the system menu's text was too small for the user: both
-// labels in the large font, each centered on its own bar in the full-width rows below the subscreen lens,
-// under the reading view's header (the current mystery's title beside the lens, its number in the
-// subscreen). At both selections every text drawn and the selected item's bar keep the 2px margin inside
-// the visible area (the number: inside the subscreen window), each label lies inside its bar (so the
-// selected one sits wholly on the white bar), the bars do not overlap, and the menu draws. The title,
-// wrapped whole in up to 3 lines for every mystery, ends above the first bar.
+// The hold-UP menu, drawn by the app because the system menu's text was too small for the user: its three
+// labels in the large font, two at a time, each centered on its own bar in the full-width rows below the
+// subscreen lens, under the reading view's header (the current mystery's title beside the lens, its number
+// in the subscreen). In every language and at every selection, every text drawn, the selected item's bar
+// and the scroll bar keep the 2px margin inside the visible area (the number: inside the subscreen window),
+// each label lies inside its bar (so the selected one sits wholly on the white bar), the bars do not
+// overlap, and the menu draws (MenuCheck.listFits). The title, wrapped whole in up to 3 lines for every
+// mystery, ends above the first bar.
 (:test)
 function menuStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
@@ -532,51 +571,104 @@ function menuStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var seen = {} as Dictionary<String, Boolean>;
     var firstBarTop = MenuLayout.bar(0)[1];
     var ok = true;
-    for (var set = 0; set < 4; set++) {
-        for (var decade = 1; decade <= Rosary.DECADES; decade++) {
-            var menu = new RosaryMenuView(set as Rosary.MysterySet, decade);
-            ok = LayoutCheck.wrapsWhole(menu.title(), menu.titleLines(), 3, logger) && ok;
-            var header = ReadingLayout.headerPlan(menu.titleLines(), decade, ring[0], ring[1]);
-            for (var i = 0; i < header.size(); i++) {
-                ok = LayoutCheck.mainItemFits(dc, header[i], seen, logger) && ok;
-                ok = MenuCheck.endsAbove(dc, header[i], firstBarTop, logger) && ok;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        for (var set = 0; set < 4; set++) {
+            for (var decade = 1; decade <= Rosary.DECADES; decade++) {
+                var menu = new RosaryMenuView(set as Rosary.MysterySet, decade);
+                ok = LayoutCheck.wrapsWhole(menu.title(), menu.titleLines(), 3, logger) && ok;
+                var header = ReadingLayout.headerPlan(menu.titleLines(), decade, ring[0], ring[1]);
+                for (var i = 0; i < header.size(); i++) {
+                    ok = LayoutCheck.mainItemFits(dc, header[i], seen, logger) && ok;
+                    ok = MenuCheck.endsAbove(dc, header[i], firstBarTop, logger) && ok;
+                }
+                if (set == 0 && decade == 1) {
+                    ok = MenuCheck.listFits(dc, menu, seen, logger) && ok;
+                } else {
+                    menu.onUpdate(dc);
+                }
             }
-            for (var selected = 0; selected < MenuLayout.ITEM_COUNT; selected++) {
-                menu.selected = selected;
-                menu.onUpdate(dc);
-            }
-        }
-    }
-    var labels = new RosaryMenuView(Rosary.JOYFUL, 1).labels();
-    for (var selected = 0; selected < MenuLayout.ITEM_COUNT; selected++) {
-        var bar = MenuCheck.box(MenuLayout.bar(selected));
-        var barFits = ScreenArea.visible(bar);
-        logger.debug("selected " + selected + ": " + (barFits ? "fits " : "OUT ") + ScreenArea.describeVisible("bar", bar));
-        ok = ok && barFits;
-        for (var i = 0; i < labels.size(); i++) {
-            var item = MenuLayout.label(i, labels[i]);
-            ok = LayoutCheck.mainItemFits(dc, item, seen, logger) && ok;
-            ok = MenuCheck.onItsBar(dc, item, MenuLayout.bar(i), logger) && ok;
         }
     }
     var first = MenuLayout.bar(0);
     var second = MenuLayout.bar(1);
-    var large = MenuLayout.label(0, labels[0]).font == Graphics.FONT_LARGE && MenuLayout.label(1, labels[1]).font == Graphics.FONT_LARGE;
     logger.debug("bars " + first + " " + second + " large font " + Graphics.getFontHeight(Graphics.FONT_LARGE) + "px (ascent "
         + Graphics.getFontAscent(Graphics.FONT_LARGE) + ", descent " + Graphics.getFontDescent(Graphics.FONT_LARGE) + ")");
-    return ok && large && first[3] < second[1];
+    return ok && first[3] < second[1] && MenuLayout.VISIBLE_ITEMS == 2;
 }
 
-// Only the selected menu item is inverted, at both selections: the selected one is black text on a white
-// bar, the other white text on the black background with no bar. So the two items always look different,
-// and every label contrasts with what lies under it (MenuLayout.itemColors, which the view draws with).
+// The language picker, in the menu's style: its title ("Language") beside the lens where the menu shows the
+// mystery's, over Automatic and the four languages, two at a time, the window scrolling over the five. In every language, with the saved
+// choice's mark on each item in turn and at every selection, everything it draws keeps the 2px margin inside
+// the visible area as the menu's does (MenuCheck.listFits), the mark lies inside its bar and clear of the
+// label, and the title, wrapped whole, ends above the first bar. Uses the real Storage and puts back the
+// saved choice that was there.
+(:test)
+function languagePickerStaysInsideTheVisibleArea(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var seen = {} as Dictionary<String, Boolean>;
+    var firstBarTop = MenuLayout.bar(0)[1];
+    var before = Application.Storage.getValue(I18n.CHOICE_KEY);
+    var ok = true;
+    try {
+        for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+            for (var choice = I18n.AUTOMATIC; choice <= I18n.LATIN; choice++) {
+                Application.Storage.setValue(I18n.CHOICE_KEY, choice);
+                TestLanguage.use(logger, language);
+                var picker = new LanguageView();
+                ok = LayoutCheck.wrapsWhole(I18n.text(I18n.MenuLanguage), picker.titleLines(), 3, logger) && ok;
+                var header = LanguageLayout.headerPlan(picker.titleLines());
+                for (var i = 0; i < header.size(); i++) {
+                    ok = LayoutCheck.mainItemFits(dc, header[i], seen, logger) && ok;
+                    ok = MenuCheck.endsAbove(dc, header[i], firstBarTop, logger) && ok;
+                }
+                ok = picker.selected == choice && picker.isMarked(choice) && MenuCheck.listFits(dc, picker, seen, logger) && ok;
+            }
+        }
+    } finally {
+        if (before == null) {
+            Application.Storage.deleteValue(I18n.CHOICE_KEY);
+        } else {
+            Application.Storage.setValue(I18n.CHOICE_KEY, before as Application.PropertyValueType);
+        }
+        I18n.reset();
+    }
+    return ok;
+}
+
+// The menu and the language picker stay small: each open list, measured on its own after one warm-up list,
+// holds less than ReadingCheck.MEMORY_BUDGET bytes, in every language.
+(:test)
+function menuAndPickerStaySmall(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    TestLanguage.use(logger, I18n.ENG);
+    var warmUp = MenuCheck.memoryHeld(dc, false);
+    var held = [] as Array<Number>;
+    var ok = true;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        var menu = MenuCheck.memoryHeld(dc, false);
+        var picker = MenuCheck.memoryHeld(dc, true);
+        held.add(menu);
+        held.add(picker);
+        ok = ok && menu > 0 && picker > 0 && menu < ReadingCheck.MEMORY_BUDGET && picker < ReadingCheck.MEMORY_BUDGET;
+    }
+    logger.debug("warm-up menu " + warmUp + " bytes; menu, picker held eng, spa, fre, lat " + held + " (budget "
+        + ReadingCheck.MEMORY_BUDGET + ")");
+    return ok;
+}
+
+// Only the selected item of a list is inverted, at every selection: the selected one is black text on a
+// white bar, any other white text on the black background with no bar. So the items always look different,
+// and every label contrasts with what lies under it (MenuLayout.itemColors, which the lists draw with).
 (:test)
 function menuInvertsOnlyTheSelectedItem(logger as Logger) as Boolean {
     var ok = MenuLayout.BACKGROUND == Graphics.COLOR_BLACK;
     var looks = "";
-    for (var selected = 0; selected < MenuLayout.ITEM_COUNT; selected++) {
+    var count = LanguageLayout.labels().size();
+    for (var selected = 0; selected < count; selected++) {
         looks += " selected " + selected + ":";
-        for (var i = 0; i < MenuLayout.ITEM_COUNT; i++) {
+        for (var i = 0; i < count; i++) {
             var colors = MenuLayout.itemColors(i, selected);
             var under = colors[1] == Graphics.COLOR_TRANSPARENT ? MenuLayout.BACKGROUND : colors[1];
             var inverted = colors[0] == Graphics.COLOR_BLACK && colors[1] == Graphics.COLOR_WHITE;
@@ -592,6 +684,86 @@ function menuInvertsOnlyTheSelectedItem(logger as Logger) as Boolean {
 
 (:test)
 module MenuCheck {
+
+    // Memory an open list holds once drawn: the menu (over the 2nd Sorrowful mystery) or the picker.
+    function memoryHeld(dc as Dc, picker as Boolean) as Number {
+        var before = System.getSystemStats().usedMemory;
+        var list = (picker ? new LanguageView() : new RosaryMenuView(Rosary.SORROWFUL, 2)) as BarListView;
+        list.onUpdate(dc);
+        return System.getSystemStats().usedMemory - before;
+    }
+
+    // Walks the list's selection from its first item to its last. At each step the window shows the selected
+    // item, and every item on screen fits (shownFits); the list draws.
+    function listFits(dc as Dc, list as BarListView, seen as Dictionary<String, Boolean>, logger as Logger) as Boolean {
+        var count = list.labels().size();
+        for (var i = 0; i < count; i++) {
+            list.moveUp();
+        }
+        var ok = list.selected == 0 && list.first == 0;
+        var trail = "";
+        for (var position = 0; position < count; position++) {
+            if (position > 0) {
+                ok = list.moveDown() && ok;
+            }
+            trail += " " + list.selected + "/" + list.first;
+            ok = list.selected == position && shownFits(dc, list, seen, logger) && ok;
+            list.onUpdate(dc);
+        }
+        ok = !list.moveDown() && ok;
+        if (!ok) {
+            logger.debug("OUT list " + list.labels() + " selected/first" + trail);
+        }
+        return ok;
+    }
+
+    // The items on screen: each label, in the large font, fits the visible area and lies on its bar; the
+    // selected item's bar fits; the saved choice's mark lies inside its bar, clear of the label; and the scroll
+    // thumb fits, on the track.
+    function shownFits(dc as Dc, list as BarListView, seen as Dictionary<String, Boolean>, logger as Logger) as Boolean {
+        var labels = list.labels();
+        var ok = list.selected >= list.first && list.selected < list.first + MenuLayout.VISIBLE_ITEMS;
+        for (var slot = 0; slot < MenuLayout.VISIBLE_ITEMS && list.first + slot < labels.size(); slot++) {
+            var index = list.first + slot;
+            var item = MenuLayout.label(slot, labels[index]);
+            ok = item.font == Graphics.FONT_LARGE && LayoutCheck.mainItemFits(dc, item, seen, logger) && ok;
+            ok = onItsBar(dc, item, MenuLayout.bar(slot), logger) && ok;
+            if (index == list.selected) {
+                var bar = box(MenuLayout.bar(slot));
+                var barFits = ScreenArea.visible(bar);
+                if (!barFits) {
+                    logger.debug("OUT " + ScreenArea.describeVisible("bar", bar));
+                }
+                ok = barFits && ok;
+            }
+            if (list.isMarked(index)) {
+                ok = markFits(dc, item, slot, logger) && ok;
+            }
+        }
+        if (labels.size() > MenuLayout.VISIBLE_ITEMS) {
+            var thumb = box(MenuLayout.thumb(list.first, labels.size()));
+            var thumbFits = ScreenArea.visible(thumb) && thumb[1] >= MenuLayout.TRACK_TOP && thumb[3] <= MenuLayout.TRACK_BOTTOM
+                && thumb[3] - thumb[1] > 0 && thumb[0] > MenuLayout.BAR_RIGHT;
+            if (!thumbFits) {
+                logger.debug("OUT " + ScreenArea.describeVisible("scroll thumb", thumb));
+            }
+            ok = thumbFits && ok;
+        }
+        return ok;
+    }
+
+    // The saved choice's mark lies inside the bar, and at least 2px left of the label.
+    function markFits(dc as Dc, item as Layout.TextItem, slot as Number, logger as Logger) as Boolean {
+        var mark = MenuLayout.mark(slot);
+        var bar = MenuLayout.bar(slot);
+        var markBox = [mark[0] - mark[2], mark[1] - mark[2], mark[0] + mark[2] + 1, mark[1] + mark[2] + 1] as Array<Number>;
+        var label = ScreenArea.measure(dc, item);
+        var ok = ScreenArea.boxInRect(box(markBox), bar[0], bar[1], bar[2], bar[3]) && markBox[2] + 2 <= label[0];
+        if (!ok) {
+            logger.debug("MARK " + markBox + " not clear of " + ScreenArea.describe(item.text, label) + " in bar " + bar);
+        }
+        return ok;
+    }
 
     function box(rect as Array<Number>) as Array<Float> {
         return [rect[0].toFloat(), rect[1].toFloat(), rect[2].toFloat(), rect[3].toFloat()] as Array<Float>;
@@ -617,11 +789,14 @@ module MenuCheck {
         return ok;
     }
 
-    // The label lies inside its bar, with the gap it keeps on each side logged.
+    // The label lies inside its bar, with the gap it keeps on each side logged when it does not.
     function onItsBar(dc as Dc, item as Layout.TextItem, bar as Array<Number>, logger as Logger) as Boolean {
         var box = ScreenArea.measure(dc, item);
         var ok = ScreenArea.boxInRect(box, bar[0], bar[1], bar[2], bar[3]);
-        logger.debug((ok ? "on bar " : "OFF bar ") + ScreenArea.describe(item.text, box) + " in " + bar + " gaps left "
+        if (ok) {
+            return true;
+        }
+        logger.debug("OFF bar " + ScreenArea.describe(item.text, box) + " in " + bar + " gaps left "
             + (box[0] - bar[0]).format("%.1f") + " top " + (box[1] - bar[1]).format("%.1f") + " right "
             + (bar[2] - box[2]).format("%.1f") + " bottom " + (bar[3] - box[3]).format("%.1f"));
         return ok;

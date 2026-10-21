@@ -244,6 +244,21 @@ class RosaryView extends WatchUi.View {
         WatchUi.requestUpdate();
     }
 
+    // Reads the step's texts again, in the language chosen since.
+    function reloadText() as Void {
+        loadStepText();
+        WatchUi.requestUpdate();
+    }
+
+    // The current prayer and the wrapped title, as drawn.
+    function prayer() as String {
+        return _prayer;
+    }
+
+    function titleLines() as Array<String> {
+        return _titleLines;
+    }
+
     private function loadStepText() as Void {
         _titleLines = MainLayout.wrapTitle(Rosary.decadeTitle(step, mysterySet));
         _mysteryLines = MainLayout.wrapMystery(Rosary.subtitle(step, mysterySet));
