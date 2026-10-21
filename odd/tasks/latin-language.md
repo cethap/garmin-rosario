@@ -41,7 +41,7 @@ Out of scope: Latin as a device language, the Nova Vulgata.
 | ID | Task | Route | Status |
 |----|------|-------|--------|
 | LA1 | `feat(i18n)`: Latin texts and Vulgata Clementina quotes, the fifth picker item, tests | delegated writer (2+ non-trivial files, research for sources) | [x] e1759f7 |
-| LA2 | `docs`: README, store listings, NOTICE | delegated writer | [ ] |
+| LA2 | `docs`: README, store listings, NOTICE | delegated writer | [x] a149038 |
 
 ## Acceptance criteria
 
@@ -173,6 +173,22 @@ The parent approved them. "Secundum" (76px) gave way to "Alterum" (59px): the fi
     - The 9f515a1 widget figure differs from L4's 27,584 because the method differs: the reading views were laid out, not drawn, so the probe stays clear of the watchdog.
   - **Size:** 550 lines added and 50 removed, of which about 120 are Latin texts, about 140 are this document and 125 are generated.
 
+- LA2 done in a149038 (delegated writer):
+  - **README:**
+    - Latin in the intro, the Languages table and section, and the picker's controls ("Latina" is the last item);
+    - the source of the Latin names;
+    - the Project Layout tables;
+    - the Bible text sources and their notes, Lc 22, 19 included;
+    - the Spanish and French summaries.
+  - **Store listings:** Latin in the languages, the menu's options and the quotes' sources, in each language.
+  - **`NOTICE`:** `i18n/lat.json`, and the Vulgata Clementina as public domain, from the Clementine Text Project on Bible Gateway. Its note names the changes the project asks users to state: the quotes are excerpts, marked with "…".
+  - **`docs/RELEASE.md`:**
+    - the test step covers Latin;
+    - screenshots include Latin;
+    - the manifest has no Latin, because Connect IQ has none;
+    - the package is now about 30 KB.
+  - **Checks:** structural readback of the six files.
+
 ## Next step
 
-LA2.
+The user checks Latin on the watch. Pushing and opening the pull request are the user's decision under the `single-pr` strategy.
