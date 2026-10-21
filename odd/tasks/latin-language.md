@@ -189,6 +189,13 @@ The parent approved them. "Secundum" (76px) gave way to "Alterum" (59px): the fi
     - the package is now about 30 KB.
   - **Checks:** structural readback of the six files.
 
+- **Review:** f2c027a..fd0535f (high, 4 lenses) approved and acknowledged, lineage review-da77cabfa8e2d0ee. Three non-blocking suggestions are left for later:
+  - R2-automatic-latin-tautological-count (`source/I18nTests.mc:101`);
+  - R2-picker-loop-counts-hardcoded (`source/LanguageTests.mc:79`);
+  - R3-automatic-language-list-hardcoded (`source/I18nTests.mc:93-101`).
+
+  The parent's spot check of `scripts/test-all.sh` gave 102 passed, 0 failed.
+
 ## Next step
 
 The user checks Latin on the watch. Pushing and opening the pull request are the user's decision under the `single-pr` strategy.
