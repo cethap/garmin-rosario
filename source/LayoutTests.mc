@@ -329,12 +329,63 @@ function prayerLabelUsesTheLargestFontThatFits(logger as Logger) as Boolean {
     return ok;
 }
 
+// The scroll bar the lists and the reading view share (MenuLayout.thumb): the thumb is as long as the track
+// times the share on screen, never shorter than THUMB_MIN, on the track's x. It sits at the top of the
+// track while the first item (or line) shows, at its bottom once the last one does, and never moves up in
+// between. The reading view pages through 4 lines at a time (offsets 0, 4, ..., then the last window) and
+// shows no scroll bar when the whole text fits one window, as a list shows none when every item fits.
+(:test)
+function scrollThumbShowsWhereTheWindowIs(logger as Logger) as Boolean {
+    var track = MenuLayout.TRACK_BOTTOM - MenuLayout.TRACK_TOP;
+    var shown = ReadingLayout.visibleLines();
+    // [shown, count]: the menu, the language picker, short and long readings, and a text long enough for the
+    // minimum length.
+    var cases = [[MenuLayout.VISIBLE_ITEMS, 3], [MenuLayout.VISIBLE_ITEMS, 5], [shown, 5], [shown, 9], [shown, 12],
+        [shown, 400]];
+    var ok = shown == 4;
+    for (var c = 0; c < cases.size(); c++) {
+        var visible = cases[c][0] as Number;
+        var count = cases[c][1] as Number;
+        var last = count - visible;
+        var length = track * visible / count;
+        length = length < MenuLayout.THUMB_MIN ? MenuLayout.THUMB_MIN : length;
+        var tops = [] as Array<Number>;
+        var caseOk = true;
+        for (var first = 0; first <= last; first++) {
+            var thumb = MenuLayout.thumb(first, visible, count);
+            tops.add(thumb[1]);
+            caseOk = caseOk && thumb[0] == MenuLayout.TRACK_X - 1 && thumb[2] == MenuLayout.TRACK_X + 2
+                && thumb[3] - thumb[1] == length && thumb[1] >= MenuLayout.TRACK_TOP && thumb[3] <= MenuLayout.TRACK_BOTTOM
+                && (first > 0 || thumb[1] == MenuLayout.TRACK_TOP) && (first < last || thumb[3] == MenuLayout.TRACK_BOTTOM)
+                && (first == 0 || thumb[1] >= tops[first - 1]);
+        }
+        logger.debug((caseOk ? "ok " : "WRONG ") + visible + " of " + count + ": length " + length + ", tops "
+            + (tops.size() > 12 ? tops.slice(0, 3) + "..." + tops.slice(tops.size() - 3, null) : tops));
+        ok = ok && caseOk && tops[tops.size() - 1] > tops[0];
+    }
+    // The reading view: none for a text that fits one window; from the first line to the last window else.
+    var fits = ReadingLayout.thumb(0, shown) == null && ReadingLayout.thumb(0, 1) == null;
+    var first = ReadingLayout.thumb(0, 10);
+    var lastPage = ReadingLayout.thumb(ReadingLayout.maxOffset(10), 10);
+    var middle = ReadingLayout.thumb(ReadingLayout.nextOffset(0, 10), 10);
+    logger.debug("reading, 10 lines: pages 0, " + ReadingLayout.nextOffset(0, 10) + ", " + ReadingLayout.maxOffset(10)
+        + " thumbs " + first + " " + middle + " " + lastPage + "; fits one window: " + fits);
+    if (!ok || !fits || first == null || middle == null || lastPage == null) {
+        return false;
+    }
+    return first[1] == MenuLayout.TRACK_TOP && lastPage[3] == MenuLayout.TRACK_BOTTOM && middle[1] > first[1]
+        && middle[3] < lastPage[3] && first.toString().equals(MenuLayout.thumb(0, shown, 10).toString());
+}
+
 // The reading view never puts text under the subscreen lens or its ring, for any of the 20 mysteries
 // at any scroll position (the user's complaint about the system's message view). The body window fits
 // the visible area with the 2px margin; the title, wrapped whole in up to 3 lines, fits beside the lens
 // and ends above the window; the mystery number sits inside the subscreen window; every body line drawn
 // lies whole inside the window (so it also keeps the margin); and wrapping never cuts the name, the
 // quote or the reference short.
+// Beside the window, the scroll bar shows where the window sits in the text, as the lists' does: it keeps
+// the margin inside the visible area, clear of the lens and right of the window, its thumb at the top on the
+// first lines and at the bottom on the last, moving down as the window does (ReadingCheck.thumbFits).
 (:test)
 function readingTextStaysClearOfTheLens(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
@@ -359,8 +410,12 @@ function readingTextStaysClearOfTheLens(logger as Logger) as Boolean {
                     ok = ReadingCheck.aboveTheWindow(dc, header[i], logger) && ok;
                 }
                 var last = ReadingLayout.maxOffset(body.size());
+                var previousTop = -1;
                 for (var offset = 0; offset <= last; offset++) {
                     ok = ReadingCheck.bodyInsideTheWindow(dc, body, offset, logger) && ok;
+                    var thumb = ReadingLayout.thumb(offset, body.size());
+                    ok = ReadingCheck.thumbFits(thumb, offset, body.size(), previousTop, logger) && ok;
+                    previousTop = thumb == null ? previousTop : (thumb as Array<Number>)[1];
                 }
             }
         }
@@ -741,7 +796,7 @@ module MenuCheck {
             }
         }
         if (labels.size() > MenuLayout.VISIBLE_ITEMS) {
-            var thumb = box(MenuLayout.thumb(list.first, labels.size()));
+            var thumb = box(MenuLayout.thumb(list.first, MenuLayout.VISIBLE_ITEMS, labels.size()));
             var thumbFits = ScreenArea.visible(thumb) && thumb[1] >= MenuLayout.TRACK_TOP && thumb[3] <= MenuLayout.TRACK_BOTTOM
                 && thumb[3] - thumb[1] > 0 && thumb[0] > MenuLayout.BAR_RIGHT;
             if (!thumbFits) {
@@ -841,6 +896,31 @@ module ReadingCheck {
         }
         var ok = joined.equals(expected);
         logger.debug((ok ? "whole " : "CUT ") + Quotes.reference(index) + ": " + lines.size() + " lines " + lines);
+        return ok;
+    }
+
+    // The scroll thumb at this offset: none when the whole text fits one window; otherwise inside the visible
+    // area with the margin, on the lists' track (MenuLayout), at least 2px right of the window, at the top of
+    // the track on the first line, at its bottom on the last window, and lower than at the offset before.
+    function thumbFits(thumb as Array<Number>?, offset as Number, count as Number, previousTop as Number,
+        logger as Logger) as Boolean {
+        if (count <= ReadingLayout.visibleLines()) {
+            return thumb == null;
+        }
+        if (thumb == null) {
+            logger.debug("NO THUMB at offset " + offset + " of " + count + " lines");
+            return false;
+        }
+        var box = MenuCheck.box(thumb);
+        var last = ReadingLayout.maxOffset(count);
+        var ok = ScreenArea.visible(box) && thumb[0] >= ReadingLayout.WINDOW_RIGHT + 2
+            && thumb[1] >= MenuLayout.TRACK_TOP && thumb[3] <= MenuLayout.TRACK_BOTTOM && thumb[3] > thumb[1]
+            && (offset > 0 || thumb[1] == MenuLayout.TRACK_TOP) && (offset < last || thumb[3] == MenuLayout.TRACK_BOTTOM)
+            && thumb[1] > previousTop;
+        if (!ok) {
+            logger.debug("THUMB at offset " + offset + " of " + count + " lines (last " + last + "): "
+                + ScreenArea.describeVisible("thumb", box) + " after top " + previousTop);
+        }
         return ok;
     }
 

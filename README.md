@@ -25,7 +25,7 @@ Rosario is a Connect IQ widget that guides the full Catholic Rosary bead by bead
   - **Read mystery**: read about the current mystery. During the opening it shows the 1st mystery, the one coming next; during a decade, that decade's mystery; on the Hail Holy Queen and once the Rosary is done, the 5th.
   - **Language**: choose the app's language (see [Languages](#languages)).
   - **Restart**: start over after the confirmation "Restart the rosary?". YES clears today's progress (the glance reads "Not started" again) and goes back to the Apostles' Creed with one short pulse; NO changes nothing.
-- **Reading view**: the mystery's name, a short Bible quote and its reference ("Lk 1:28") scroll in a fixed window below the subscreen, so no text runs under the subscreen ring. Every mystery reads in two or three screens. Reading changes nothing: no vibration, and the progress and the current bead stay as they were.
+- **Reading view**: the mystery's name, a short Bible quote and its reference ("Lk 1:28") scroll in a fixed window below the subscreen, so no text runs under the subscreen ring. Every mystery reads in two or three screens, and a thin bar on the right shows where you are in the text, as in the menu. Reading changes nothing: no vibration, and the progress and the current bead stay as they were.
 - **Glance**: the day's mysteries over today's progress, as one block: "Joyful" over "Not started", "In progress", "Mystery 2/5", "Hail Holy Queen" or "Completed". "In progress" covers the opening (Apostles' Creed to the first Glory Be); "Completed" appears once the Hail Holy Queen is prayed.
 
 ## Languages

@@ -6,7 +6,8 @@ import Toybox.WatchUi;
 // under the subscreen lens or its ring: the header (the mystery title) stays fixed in the band left of
 // the lens, where the main screen puts its title, and the body (the mystery's name, its Bible quote and
 // the reference) scrolls only inside a fixed window below the lens. The view clips its drawing to that
-// window, and the body is wrapped to the window's width, the narrowest visible width over its rows.
+// window, and the body is wrapped to the window's width, the narrowest visible width over its rows. Right
+// of the window, the lists' scroll bar shows where the window sits in the text.
 // The body wraps at spaces only: Graphics.fitTextToArea also breaks after "«" and before a closing
 // ".", which leaves "«" alone at the end of a line and "." alone on the next.
 module ReadingLayout {
@@ -52,6 +53,15 @@ module ReadingLayout {
             return 0;
         }
         return (offset - 1) / visibleLines() * visibleLines();
+    }
+
+    // The scroll bar's thumb beside the window, from this first line of count: the lists' scroll bar
+    // (MenuLayout.thumb), on the same track; none when the whole text fits one window.
+    function thumb(offset as Number, count as Number) as Array<Number>? {
+        if (count <= visibleLines()) {
+            return null;
+        }
+        return MenuLayout.thumb(offset, visibleLines(), count);
     }
 
     // The scrolling text: the mystery's name, the quote and its reference, each wrapped to the window.
@@ -141,8 +151,8 @@ module Quotes {
 }
 
 // Reading view of one mystery: its title fixed beside the lens, its number in the subscreen, and its
-// name, Bible quote and reference scrolling in the window below the lens (MysteryDelegate: UP/DOWN
-// scroll, BACK returns to the rosary). It never touches the saved progress.
+// name, Bible quote and reference scrolling in the window below the lens, with a scroll bar beside it
+// (MysteryDelegate: UP/DOWN scroll, BACK returns to the rosary). It never touches the saved progress.
 class MysteryView extends WatchUi.View {
 
     // First body line shown (0..ReadingLayout.maxOffset).
@@ -209,6 +219,7 @@ class MysteryView extends WatchUi.View {
             ReadingLayout.WINDOW_BOTTOM - ReadingLayout.WINDOW_TOP);
         drawItems(dc, ReadingLayout.bodyPlan(_bodyLines, offset));
         dc.clearClip();
+        MenuLayout.drawScrollBar(dc, offset, ReadingLayout.visibleLines(), _bodyLines.size());
     }
 
     private function drawItems(dc as Dc, items as Array<Layout.TextItem>) as Void {
