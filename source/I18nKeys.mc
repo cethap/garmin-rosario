@@ -68,7 +68,9 @@ module I18n {
         SetSingularLuminous = 277,
         ResetPrompt = 278,
         MenuRead = 279,
-        MenuReset = 280
+        MenuLanguage = 280,
+        MenuReset = 281,
+        LanguageAutomatic = 282
     }
 
     // Table 2: "mysteries" in i18n/<lang>.json.

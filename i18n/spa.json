@@ -36,7 +36,9 @@
         "SetSingularLuminous": "Luminoso",
         "ResetPrompt": "¿Reiniciar el rosario?",
         "MenuRead": "Leer misterio",
-        "MenuReset": "Reiniciar"
+        "MenuLanguage": "Idioma",
+        "MenuReset": "Reiniciar",
+        "LanguageAutomatic": "Automático"
     },
     "mysteries": {
         "Mystery1": "La Anunciación del Ángel a María",

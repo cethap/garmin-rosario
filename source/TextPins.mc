@@ -142,8 +142,8 @@ module TextPins {
         var titles = [opening.title(), second.title(), salve.title()] as Array<String>;
         logger.debug("labels=" + labels + " selected=" + opening.selected + " id=" + opening.selectedId()
             + " titles=" + titles + " first lines=" + opening.titleLines());
-        return labels.size() == MenuLayout.ITEM_COUNT && labels[0].equals(I18n.text(I18n.MenuRead))
-            && labels[1].equals(I18n.text(I18n.MenuReset))
+        return labels.size() == 3 && labels[0].equals(I18n.text(I18n.MenuRead))
+            && labels[1].equals(I18n.text(I18n.MenuLanguage)) && labels[2].equals(I18n.text(I18n.MenuReset))
             && opening.selected == 0 && opening.selectedId() == :read
             && sameTexts(titles, expected) && sameTexts(opening.titleLines(), firstLines);
     }

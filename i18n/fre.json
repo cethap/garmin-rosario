@@ -38,7 +38,9 @@
         "// ResetPrompt": "A no-break space before \"?\", as French sets it; every system font draws it as a space.",
         "ResetPrompt": "Recommencer le chapelet\u00a0?",
         "MenuRead": "Lire le mystère",
-        "MenuReset": "Recommencer"
+        "MenuLanguage": "Langue",
+        "MenuReset": "Recommencer",
+        "LanguageAutomatic": "Automatique"
     },
     "mysteries": {
         "Mystery1": "L’Annonciation",

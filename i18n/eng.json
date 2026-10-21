@@ -16,7 +16,7 @@
         "PrayerSalve": "Hail Holy Queen"
     },
     "ui": {
-        "//": "The full-screen widget's main screen, menu and reset prompt.",
+        "//": "The full-screen widget's main screen, menu, language picker and reset prompt.",
         "// PrayerCreed": "The prayers, as the main screen names the current bead in large type (a smaller font when a name is too wide for it).",
         "PrayerCreed": "Apostles' Creed",
         "PrayerOurFather": "Our Father",
@@ -48,7 +48,10 @@
         "ResetPrompt": "Restart the rosary?",
         "// MenuRead": "Menu on hold UP, drawn by the app in the large font: short enough to fit on one line.",
         "MenuRead": "Read mystery",
-        "MenuReset": "Restart"
+        "MenuLanguage": "Language",
+        "MenuReset": "Restart",
+        "// LanguageAutomatic": "The language picker's first item, which follows the watch's language. The picker names each language in that language, the same whatever the language: English, Español, Français (LanguageLayout in source/LanguageView.mc).",
+        "LanguageAutomatic": "Automatic"
     },
     "mysteries": {
         "//": "The name of each mystery, under its title on the main screen and first in the reading view. MysteryN follows Rosary.mysteryIndex + 1, like QuoteN and RefN: Joyful 1..5, Sorrowful 6..10, Glorious 11..15, Luminous 16..20. Each name fits 2 lines on the main screen.",

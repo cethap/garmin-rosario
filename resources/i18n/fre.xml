@@ -36,7 +36,9 @@
         "lumineux",
         "Recommencer le chapelet ?",
         "Lire le mystère",
-        "Recommencer"
+        "Langue",
+        "Recommencer",
+        "Automatique"
     ]</jsonData>
     <jsonData id="MysteriesFre">[
         "L’Annonciation",

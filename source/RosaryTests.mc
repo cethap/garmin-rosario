@@ -419,8 +419,9 @@ function resetStartsTodayOverOnlyWhenConfirmed(logger as Logger) as Boolean {
 }
 
 // In the menu DOWN and UP move the selection and stop at either end (no wrap-around), and hold UP does
-// nothing; none of them opens anything. BACK closes the menu and nothing else, so the rosary is back on
-// the same bead.
+// nothing; none of them opens anything. Two of the three items show at once, and the window follows the
+// selection: "Restart" scrolls into view, then "Read mystery" back. BACK closes the menu and nothing else,
+// so the rosary is back on the same bead.
 (:test)
 function menuSelectionStopsAtBothEndsAndBackCloses(logger as Logger) as Boolean {
     var ok = true;
@@ -430,34 +431,39 @@ function menuSelectionStopsAtBothEndsAndBackCloses(logger as Logger) as Boolean 
         var rosary = new MenuFake.RecordingRosary(rosaryView);
         var menu = new RosaryMenuView(rosaryView.mysterySet, Rosary.readingDecade(rosaryView.step));
         var delegate = new RosaryMenuDelegate(menu, rosary);
-        var trail = [menu.selected];
+        var trail = [menu.selected + "/" + menu.first];
+        var ids = [menu.selectedId()];
         var handled = delegate.onPreviousPage();
-        trail.add(menu.selected);
-        handled = delegate.onNextPage() && handled;
-        trail.add(menu.selected);
-        var resetSelected = menu.selectedId() == :reset;
-        handled = delegate.onNextPage() && handled;
-        trail.add(menu.selected);
+        trail.add(menu.selected + "/" + menu.first);
+        for (var i = 0; i < 3; i++) {
+            handled = delegate.onNextPage() && handled;
+            trail.add(menu.selected + "/" + menu.first);
+            ids.add(menu.selectedId());
+        }
         handled = delegate.onMenu() && handled;
-        trail.add(menu.selected);
-        handled = delegate.onPreviousPage() && handled;
-        trail.add(menu.selected);
-        var readSelected = menu.selectedId() == :read;
+        trail.add(menu.selected + "/" + menu.first);
+        for (var i = 0; i < 2; i++) {
+            handled = delegate.onPreviousPage() && handled;
+            trail.add(menu.selected + "/" + menu.first);
+            ids.add(menu.selectedId());
+        }
         var quiet = rosary.calls.size() == 0;
         var back = delegate.onBack();
-        logger.debug("trail=" + trail + " handled=" + handled + " quiet=" + quiet + " back=" + back
-            + " calls=" + rosary.calls + " step=" + rosaryView.step);
-        ok = handled && quiet && back && resetSelected && readSelected
-            && trail.toString().equals([0, 0, 1, 1, 1, 0].toString())
+        logger.debug("selected/first trail=" + trail + " ids=" + ids + " handled=" + handled + " quiet=" + quiet + " back="
+            + back + " calls=" + rosary.calls + " step=" + rosaryView.step);
+        ok = handled && quiet && back && menu.labels().size() == 3
+            && trail.toString().equals(["0/0", "0/0", "1/0", "2/1", "2/1", "2/1", "1/1", "0/0"].toString())
+            && ids.toString().equals([:read, :language, :reset, :reset, :language, :read].toString())
             && rosary.calls.toString().equals(["close"].toString()) && rosaryView.step == 31 && ok;
     }
     return ok;
 }
 
 // START closes the menu, then opens the selected item over the rosary, so BACK from it lands on the
-// rosary: "Leer misterio" the reading view (RosaryDelegate.readMystery), "Reiniciar" the confirmation
-// "¿Reiniciar el rosario?" (RosaryDelegate.confirmRestart). A recording rosary delegate stands in for
-// the real one, which would push those views.
+// rosary: "Read mystery" the reading view (RosaryDelegate.readMystery), "Language" the language picker
+// (RosaryDelegate.chooseLanguage), "Restart" the confirmation "Restart the rosary?"
+// (RosaryDelegate.confirmRestart). A recording rosary delegate stands in for the real one, which would push
+// those views.
 (:test)
 function menuSelectOpensTheChosenItemOverTheRosary(logger as Logger) as Boolean {
     var ok = true;
@@ -465,12 +471,12 @@ function menuSelectOpensTheChosenItemOverTheRosary(logger as Logger) as Boolean 
         TestLanguage.use(logger, language);
         var rosaryView = new RosaryView(31, Rosary.JOYFUL);
         var reading = MenuFake.select(rosaryView, 0);
-        var restarting = MenuFake.select(rosaryView, 1);
-        logger.debug("read: " + reading + " restart: " + restarting + " step=" + rosaryView.step);
-        var read = I18n.text(I18n.MenuRead);
-        var reset = I18n.text(I18n.MenuReset);
-        ok = reading.toString().equals([true, read, ["close", "read"]].toString())
-            && restarting.toString().equals([true, reset, ["close", "restart"]].toString())
+        var choosing = MenuFake.select(rosaryView, 1);
+        var restarting = MenuFake.select(rosaryView, 2);
+        logger.debug("read: " + reading + " language: " + choosing + " restart: " + restarting + " step=" + rosaryView.step);
+        ok = reading.toString().equals([true, I18n.text(I18n.MenuRead), ["close", "read"]].toString())
+            && choosing.toString().equals([true, I18n.text(I18n.MenuLanguage), ["close", "language"]].toString())
+            && restarting.toString().equals([true, I18n.text(I18n.MenuReset), ["close", "restart"]].toString())
             && rosaryView.step == 31 && ok;
     }
     return ok;
@@ -494,6 +500,10 @@ module MenuFake {
 
         function readMystery() as Void {
             calls.add("read");
+        }
+
+        function chooseLanguage() as Void {
+            calls.add("language");
         }
 
         function confirmRestart() as Void {

@@ -2,9 +2,10 @@ import Toybox.Lang;
 import Toybox.WatchUi;
 
 // Buttons of the hold-UP menu (RosaryMenuView): DOWN and UP move the selection and stop at either end.
-// START closes the menu, then opens the selected item over the rosary: "Leer misterio" the reading view,
-// "Reiniciar" the "¿Reiniciar el rosario?" confirmation, so BACK from either lands on the rosary, on the
-// same bead. BACK closes the menu. Holding UP does nothing here. Nothing vibrates and nothing is saved.
+// START closes the menu, then opens the selected item over the rosary: "Read mystery" the reading view,
+// "Language" the language picker, "Restart" the "Restart the rosary?" confirmation, so BACK from any of
+// them lands on the rosary, on the same bead. BACK closes the menu. Holding UP does nothing here. Nothing
+// vibrates and nothing is saved.
 class RosaryMenuDelegate extends WatchUi.BehaviorDelegate {
 
     private var _menu as RosaryMenuView;
@@ -38,6 +39,8 @@ class RosaryMenuDelegate extends WatchUi.BehaviorDelegate {
         _rosary.closeMenu();
         if (id == :read) {
             _rosary.readMystery();
+        } else if (id == :language) {
+            _rosary.chooseLanguage();
         } else if (id == :reset) {
             _rosary.confirmRestart();
         }

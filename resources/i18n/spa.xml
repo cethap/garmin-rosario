@@ -36,7 +36,9 @@
         "Luminoso",
         "¿Reiniciar el rosario?",
         "Leer misterio",
-        "Reiniciar"
+        "Idioma",
+        "Reiniciar",
+        "Automático"
     ]</jsonData>
     <jsonData id="MysteriesSpa">[
         "La Anunciación del Ángel a María",

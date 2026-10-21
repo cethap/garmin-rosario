@@ -36,7 +36,9 @@
         "Luminous",
         "Restart the rosary?",
         "Read mystery",
-        "Restart"
+        "Language",
+        "Restart",
+        "Automatic"
     ]</jsonData>
     <jsonData id="MysteriesEng">[
         "The Annunciation",

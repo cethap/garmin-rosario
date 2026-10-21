@@ -1,3 +1,4 @@
+import Toybox.Application;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.System;
@@ -401,9 +402,10 @@ function readingFontHasEveryGlyph(logger as Logger) as Boolean {
 
 // Every character the other screens draw has a glyph in the font they draw it with, as the reading view's
 // in the tiny font above: the glance's labels (medium), the titles and the mystery names (tiny), the prayer
-// labels (in MainLayout.prayerFont), the menu's labels (large) and the reset prompt, which the system's
-// confirmation draws in a font of its own, so in every font. French needs é è ê à ç ô Ô É ’ and the
-// no-break space, which every font has.
+// labels (in MainLayout.prayerFont), the labels of the menu and the language picker (large), the picker's
+// title (tiny) and the reset prompt, which the system's confirmation draws in a font of its own, so in every
+// font. French needs é è ê à ç ô Ô É ’ and the no-break space, which every font has; the picker needs ñ and
+// ç in the large font ("Español", "Français").
 (:test)
 function screenFontsHaveEveryGlyph(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
@@ -435,10 +437,13 @@ function screenFontsHaveEveryGlyph(logger as Logger) as Boolean {
             fonts.add(MainLayout.prayerFont(dc, label));
         }
         var menu = new RosaryMenuView(Rosary.JOYFUL, 1).labels();
+        menu.addAll(LanguageLayout.labels());
         for (var i = 0; i < menu.size(); i++) {
             texts.add(menu[i]);
             fonts.add(Graphics.FONT_LARGE);
         }
+        texts.add(I18n.text(I18n.MenuLanguage));
+        fonts.add(tiny);
         var prompt = I18n.text(I18n.ResetPrompt);
         var all = [Graphics.FONT_XTINY, Graphics.FONT_TINY, Graphics.FONT_SMALL, Graphics.FONT_MEDIUM, Graphics.FONT_LARGE];
         for (var i = 0; i < all.size(); i++) {
@@ -551,13 +556,14 @@ function readingViewDrawsEveryScrollPosition(logger as Logger) as Boolean {
     return drawn >= 20 * I18n.LANGUAGE_COUNT && largest > 0 && largest < ReadingCheck.MEMORY_BUDGET;
 }
 
-// The hold-UP menu, drawn by the app because the system menu's text was too small for the user: both
-// labels in the large font, each centered on its own bar in the full-width rows below the subscreen lens,
-// under the reading view's header (the current mystery's title beside the lens, its number in the
-// subscreen). At both selections every text drawn and the selected item's bar keep the 2px margin inside
-// the visible area (the number: inside the subscreen window), each label lies inside its bar (so the
-// selected one sits wholly on the white bar), the bars do not overlap, and the menu draws. The title,
-// wrapped whole in up to 3 lines for every mystery, ends above the first bar.
+// The hold-UP menu, drawn by the app because the system menu's text was too small for the user: its three
+// labels in the large font, two at a time, each centered on its own bar in the full-width rows below the
+// subscreen lens, under the reading view's header (the current mystery's title beside the lens, its number
+// in the subscreen). In every language and at every selection, every text drawn, the selected item's bar
+// and the scroll bar keep the 2px margin inside the visible area (the number: inside the subscreen window),
+// each label lies inside its bar (so the selected one sits wholly on the white bar), the bars do not
+// overlap, and the menu draws (MenuCheck.listFits). The title, wrapped whole in up to 3 lines for every
+// mystery, ends above the first bar.
 (:test)
 function menuStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
@@ -576,23 +582,11 @@ function menuStaysInsideTheVisibleArea(logger as Logger) as Boolean {
                     ok = LayoutCheck.mainItemFits(dc, header[i], seen, logger) && ok;
                     ok = MenuCheck.endsAbove(dc, header[i], firstBarTop, logger) && ok;
                 }
-                for (var selected = 0; selected < MenuLayout.ITEM_COUNT; selected++) {
-                    menu.selected = selected;
+                if (set == 0 && decade == 1) {
+                    ok = MenuCheck.listFits(dc, menu, seen, logger) && ok;
+                } else {
                     menu.onUpdate(dc);
                 }
-            }
-        }
-        var labels = new RosaryMenuView(Rosary.JOYFUL, 1).labels();
-        for (var selected = 0; selected < MenuLayout.ITEM_COUNT; selected++) {
-            var bar = MenuCheck.box(MenuLayout.bar(selected));
-            var barFits = ScreenArea.visible(bar);
-            logger.debug("selected " + selected + ": " + (barFits ? "fits " : "OUT ") + ScreenArea.describeVisible("bar", bar));
-            ok = ok && barFits;
-            for (var i = 0; i < labels.size(); i++) {
-                var item = MenuLayout.label(i, labels[i]);
-                ok = LayoutCheck.mainItemFits(dc, item, seen, logger) && ok;
-                ok = MenuCheck.onItsBar(dc, item, MenuLayout.bar(i), logger) && ok;
-                ok = ok && item.font == Graphics.FONT_LARGE;
             }
         }
     }
@@ -600,19 +594,81 @@ function menuStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var second = MenuLayout.bar(1);
     logger.debug("bars " + first + " " + second + " large font " + Graphics.getFontHeight(Graphics.FONT_LARGE) + "px (ascent "
         + Graphics.getFontAscent(Graphics.FONT_LARGE) + ", descent " + Graphics.getFontDescent(Graphics.FONT_LARGE) + ")");
-    return ok && first[3] < second[1];
+    return ok && first[3] < second[1] && MenuLayout.VISIBLE_ITEMS == 2;
 }
 
-// Only the selected menu item is inverted, at both selections: the selected one is black text on a white
-// bar, the other white text on the black background with no bar. So the two items always look different,
-// and every label contrasts with what lies under it (MenuLayout.itemColors, which the view draws with).
+// The language picker, in the menu's style: its title ("Language") beside the lens where the menu shows the
+// mystery's, over Automatic and the three languages, two at a time. In every language, with the saved
+// choice's mark on each item in turn and at every selection, everything it draws keeps the 2px margin inside
+// the visible area as the menu's does (MenuCheck.listFits), the mark lies inside its bar and clear of the
+// label, and the title, wrapped whole, ends above the first bar. Uses the real Storage and puts back the
+// saved choice that was there.
+(:test)
+function languagePickerStaysInsideTheVisibleArea(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    var seen = {} as Dictionary<String, Boolean>;
+    var firstBarTop = MenuLayout.bar(0)[1];
+    var before = Application.Storage.getValue(I18n.CHOICE_KEY);
+    var ok = true;
+    try {
+        for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+            for (var choice = I18n.AUTOMATIC; choice <= I18n.FRENCH; choice++) {
+                Application.Storage.setValue(I18n.CHOICE_KEY, choice);
+                TestLanguage.use(logger, language);
+                var picker = new LanguageView();
+                ok = LayoutCheck.wrapsWhole(I18n.text(I18n.MenuLanguage), picker.titleLines(), 3, logger) && ok;
+                var header = LanguageLayout.headerPlan(picker.titleLines());
+                for (var i = 0; i < header.size(); i++) {
+                    ok = LayoutCheck.mainItemFits(dc, header[i], seen, logger) && ok;
+                    ok = MenuCheck.endsAbove(dc, header[i], firstBarTop, logger) && ok;
+                }
+                ok = picker.selected == choice && picker.isMarked(choice) && MenuCheck.listFits(dc, picker, seen, logger) && ok;
+            }
+        }
+    } finally {
+        if (before == null) {
+            Application.Storage.deleteValue(I18n.CHOICE_KEY);
+        } else {
+            Application.Storage.setValue(I18n.CHOICE_KEY, before as Application.PropertyValueType);
+        }
+        I18n.reset();
+    }
+    return ok;
+}
+
+// The menu and the language picker stay small: each open list, measured on its own after one warm-up list,
+// holds less than ReadingCheck.MEMORY_BUDGET bytes, in every language.
+(:test)
+function menuAndPickerStaySmall(logger as Logger) as Boolean {
+    var dc = ScreenArea.measuringDc();
+    TestLanguage.use(logger, I18n.ENG);
+    var warmUp = MenuCheck.memoryHeld(dc, false);
+    var held = [] as Array<Number>;
+    var ok = true;
+    for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
+        TestLanguage.use(logger, language);
+        var menu = MenuCheck.memoryHeld(dc, false);
+        var picker = MenuCheck.memoryHeld(dc, true);
+        held.add(menu);
+        held.add(picker);
+        ok = ok && menu > 0 && picker > 0 && menu < ReadingCheck.MEMORY_BUDGET && picker < ReadingCheck.MEMORY_BUDGET;
+    }
+    logger.debug("warm-up menu " + warmUp + " bytes; menu, picker held eng, spa, fre " + held + " (budget "
+        + ReadingCheck.MEMORY_BUDGET + ")");
+    return ok;
+}
+
+// Only the selected item of a list is inverted, at every selection: the selected one is black text on a
+// white bar, any other white text on the black background with no bar. So the items always look different,
+// and every label contrasts with what lies under it (MenuLayout.itemColors, which the lists draw with).
 (:test)
 function menuInvertsOnlyTheSelectedItem(logger as Logger) as Boolean {
     var ok = MenuLayout.BACKGROUND == Graphics.COLOR_BLACK;
     var looks = "";
-    for (var selected = 0; selected < MenuLayout.ITEM_COUNT; selected++) {
+    var count = LanguageLayout.labels().size();
+    for (var selected = 0; selected < count; selected++) {
         looks += " selected " + selected + ":";
-        for (var i = 0; i < MenuLayout.ITEM_COUNT; i++) {
+        for (var i = 0; i < count; i++) {
             var colors = MenuLayout.itemColors(i, selected);
             var under = colors[1] == Graphics.COLOR_TRANSPARENT ? MenuLayout.BACKGROUND : colors[1];
             var inverted = colors[0] == Graphics.COLOR_BLACK && colors[1] == Graphics.COLOR_WHITE;
@@ -628,6 +684,86 @@ function menuInvertsOnlyTheSelectedItem(logger as Logger) as Boolean {
 
 (:test)
 module MenuCheck {
+
+    // Memory an open list holds once drawn: the menu (over the 2nd Sorrowful mystery) or the picker.
+    function memoryHeld(dc as Dc, picker as Boolean) as Number {
+        var before = System.getSystemStats().usedMemory;
+        var list = (picker ? new LanguageView() : new RosaryMenuView(Rosary.SORROWFUL, 2)) as BarListView;
+        list.onUpdate(dc);
+        return System.getSystemStats().usedMemory - before;
+    }
+
+    // Walks the list's selection from its first item to its last. At each step the window shows the selected
+    // item, and every item on screen fits (shownFits); the list draws.
+    function listFits(dc as Dc, list as BarListView, seen as Dictionary<String, Boolean>, logger as Logger) as Boolean {
+        var count = list.labels().size();
+        for (var i = 0; i < count; i++) {
+            list.moveUp();
+        }
+        var ok = list.selected == 0 && list.first == 0;
+        var trail = "";
+        for (var position = 0; position < count; position++) {
+            if (position > 0) {
+                ok = list.moveDown() && ok;
+            }
+            trail += " " + list.selected + "/" + list.first;
+            ok = list.selected == position && shownFits(dc, list, seen, logger) && ok;
+            list.onUpdate(dc);
+        }
+        ok = !list.moveDown() && ok;
+        if (!ok) {
+            logger.debug("OUT list " + list.labels() + " selected/first" + trail);
+        }
+        return ok;
+    }
+
+    // The items on screen: each label, in the large font, fits the visible area and lies on its bar; the
+    // selected item's bar fits; the saved choice's mark lies inside its bar, clear of the label; and the scroll
+    // thumb fits, on the track.
+    function shownFits(dc as Dc, list as BarListView, seen as Dictionary<String, Boolean>, logger as Logger) as Boolean {
+        var labels = list.labels();
+        var ok = list.selected >= list.first && list.selected < list.first + MenuLayout.VISIBLE_ITEMS;
+        for (var slot = 0; slot < MenuLayout.VISIBLE_ITEMS && list.first + slot < labels.size(); slot++) {
+            var index = list.first + slot;
+            var item = MenuLayout.label(slot, labels[index]);
+            ok = item.font == Graphics.FONT_LARGE && LayoutCheck.mainItemFits(dc, item, seen, logger) && ok;
+            ok = onItsBar(dc, item, MenuLayout.bar(slot), logger) && ok;
+            if (index == list.selected) {
+                var bar = box(MenuLayout.bar(slot));
+                var barFits = ScreenArea.visible(bar);
+                if (!barFits) {
+                    logger.debug("OUT " + ScreenArea.describeVisible("bar", bar));
+                }
+                ok = barFits && ok;
+            }
+            if (list.isMarked(index)) {
+                ok = markFits(dc, item, slot, logger) && ok;
+            }
+        }
+        if (labels.size() > MenuLayout.VISIBLE_ITEMS) {
+            var thumb = box(MenuLayout.thumb(list.first, labels.size()));
+            var thumbFits = ScreenArea.visible(thumb) && thumb[1] >= MenuLayout.TRACK_TOP && thumb[3] <= MenuLayout.TRACK_BOTTOM
+                && thumb[3] - thumb[1] > 0 && thumb[0] > MenuLayout.BAR_RIGHT;
+            if (!thumbFits) {
+                logger.debug("OUT " + ScreenArea.describeVisible("scroll thumb", thumb));
+            }
+            ok = thumbFits && ok;
+        }
+        return ok;
+    }
+
+    // The saved choice's mark lies inside the bar, and at least 2px left of the label.
+    function markFits(dc as Dc, item as Layout.TextItem, slot as Number, logger as Logger) as Boolean {
+        var mark = MenuLayout.mark(slot);
+        var bar = MenuLayout.bar(slot);
+        var markBox = [mark[0] - mark[2], mark[1] - mark[2], mark[0] + mark[2] + 1, mark[1] + mark[2] + 1] as Array<Number>;
+        var label = ScreenArea.measure(dc, item);
+        var ok = ScreenArea.boxInRect(box(markBox), bar[0], bar[1], bar[2], bar[3]) && markBox[2] + 2 <= label[0];
+        if (!ok) {
+            logger.debug("MARK " + markBox + " not clear of " + ScreenArea.describe(item.text, label) + " in bar " + bar);
+        }
+        return ok;
+    }
 
     function box(rect as Array<Number>) as Array<Float> {
         return [rect[0].toFloat(), rect[1].toFloat(), rect[2].toFloat(), rect[3].toFloat()] as Array<Float>;
@@ -653,11 +789,14 @@ module MenuCheck {
         return ok;
     }
 
-    // The label lies inside its bar, with the gap it keeps on each side logged.
+    // The label lies inside its bar, with the gap it keeps on each side logged when it does not.
     function onItsBar(dc as Dc, item as Layout.TextItem, bar as Array<Number>, logger as Logger) as Boolean {
         var box = ScreenArea.measure(dc, item);
         var ok = ScreenArea.boxInRect(box, bar[0], bar[1], bar[2], bar[3]);
-        logger.debug((ok ? "on bar " : "OFF bar ") + ScreenArea.describe(item.text, box) + " in " + bar + " gaps left "
+        if (ok) {
+            return true;
+        }
+        logger.debug("OFF bar " + ScreenArea.describe(item.text, box) + " in " + bar + " gaps left "
             + (box[0] - bar[0]).format("%.1f") + " top " + (box[1] - bar[1]).format("%.1f") + " right "
             + (bar[2] - box[2]).format("%.1f") + " bottom " + (bar[3] - box[3]).format("%.1f"));
         return ok;
