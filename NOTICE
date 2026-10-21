@@ -1,0 +1,28 @@
+Rosario for Garmin Instinct 2
+Copyright (c) 2026 Cesar Tapasco
+
+The code of this project is licensed under the MIT license (see LICENSE).
+
+The Bible quotes are not covered by the MIT license. They keep the terms of
+their sources, listed below. The quotes are in these files:
+
+  resources/strings/quotes.xml       English
+  resources-spa/strings/quotes.xml   Spanish
+  resources-fre/strings/quotes.xml   French
+
+English
+  Douay-Rheims Bible, Challoner revision. Public domain.
+  Copied from https://www.drbo.org/
+
+French
+  "La Sainte Bible", translated by Augustin Crampon, Desclée, 1923 edition
+  (Bible Crampon 1923). Public domain.
+  Copied from the French Wikisource transcription,
+  https://fr.wikisource.org/wiki/Bible_Crampon_1923
+
+Spanish
+  "El Libro del Pueblo de Dios. La Biblia" (Traducción argentina), 1990.
+  Copied from the Holy See's site,
+  https://www.vatican.va/archive/ESL0506/_INDEX.HTM
+  Copyright © Libreria Editrice Vaticana
+  Used with attribution; all rights remain with the publisher.
