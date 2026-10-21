@@ -1,0 +1,63 @@
+<strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <!--
+        A Bible quote for each mystery, read from the menu on hold UP ("Lire le mystère"). Loaded one at a
+        time with WatchUi.loadResource. QuoteN and RefN follow Rosary.mysteryIndex + 1: joyeux 1..5,
+        douloureux 6..10, glorieux 11..15, lumineux 16..20.
+
+        Source: "La Sainte Bible" translated by Augustin Crampon, 1923 edition (public domain), as published
+        on French Wikisource (https://fr.wikisource.org/wiki/Bible_Crampon_1923); one URL per quote in
+        odd/tasks/rosary-distribution.md. Each quote is copied verbatim from the verse text there,
+        no-break spaces included: the source puts a no-break space (&#160;) or a narrow one (&#8239;) inside
+        « » and before : ; ? !, so a line never starts with that punctuation. The references use its
+        numbering (Mark 9 follows the Vulgate: the voice from the cloud is verse 6). "…" marks an excerpt
+        that starts or ends inside a sentence; « » are kept when the excerpt holds both, and left out when
+        the spoken words open or close outside it.
+    -->
+    <!-- Joyeux -->
+    <string id="Quote1">L’ange étant entré où elle était, lui dit&#8239;: «&#160;Je vous salue, pleine de grâce&#8239;; le Seigneur est avec vous, vous êtes bénie entre les femmes.&#160;»</string>
+    <string id="Ref1">Lc 1, 28</string>
+    <string id="Quote2">Vous êtes bénie entre les femmes, et le fruit de vos entrailles est béni.</string>
+    <string id="Ref2">Lc 1, 42</string>
+    <string id="Quote3">Et elle mit au monde son fils premier-né, l’enveloppa de langes et le coucha dans une crèche…</string>
+    <string id="Ref3">Lc 2, 7</string>
+    <string id="Quote4">…mes yeux ont vu votre salut, Que vous avez préparé à la face de tous les peuples…</string>
+    <string id="Ref4">Lc 2, 30-31</string>
+    <string id="Quote5">Et il leur répondit&#8239;: «&#160;Pourquoi me cherchiez-vous&#8239;? Ne saviez-vous pas qu’il faut que je sois aux choses de mon Père&#8239;?&#160;»</string>
+    <string id="Ref5">Lc 2, 49</string>
+
+    <!-- Douloureux -->
+    <string id="Quote6">«&#8239;Père, si vous voulez, éloignez de moi ce calice&#8239;! Cependant que ce ne soit pas ma volonté, mais la vôtre qui se fasse.&#8239;»</string>
+    <string id="Ref6">Lc 22, 42</string>
+    <string id="Quote7">Alors Pilate prit Jésus et le fit flageller.</string>
+    <string id="Ref7">Jn 19, 1</string>
+    <string id="Quote8">Et les soldats ayant tressé une couronne d’épines, la mirent sur sa tête…</string>
+    <string id="Ref8">Jn 19, 2</string>
+    <string id="Quote9">Jésus, portant sa croix, arriva hors de la ville au lieu nommé Calvaire, en Hébreu Golgotha…</string>
+    <string id="Ref9">Jn 19, 17</string>
+    <string id="Quote10">Et Jésus s’écria d’une voix forte&#8239;: «&#8239;Père, je remets mon esprit entre vos mains.&#8239;» En disant ces mots, il expira.</string>
+    <string id="Ref10">Lc 23, 46</string>
+
+    <!-- Glorieux -->
+    <string id="Quote11">Pourquoi cherchez-vous parmi les morts celui qui est vivant&#8239;? Il n’est point ici, mais il est ressuscité.</string>
+    <string id="Ref11">Lc 24, 5-6</string>
+    <string id="Quote12">Après qu’il eut ainsi parlé, il fut élevé en leur présence, et une nuée le déroba à leurs yeux.</string>
+    <string id="Ref12">Ac 1, 9</string>
+    <string id="Quote13">Ils furent tous remplis du Saint-Esprit, et ils se mirent à parler d’autres langues, selon que l’Esprit-Saint leur donnait de s’exprimer.</string>
+    <string id="Ref13">Ac 2, 4</string>
+    <string id="Quote14">Voici, en effet, que désormais toutes les générations m’appelleront bienheureuse…</string>
+    <string id="Ref14">Lc 1, 48</string>
+    <string id="Quote15">Puis il parut dans le ciel un grand signe&#8239;: une femme revêtue du soleil, la lune sous ses pieds, et une couronne de douze étoiles sur sa tête.</string>
+    <string id="Ref15">Ap 12, 1</string>
+
+    <!-- Lumineux -->
+    <string id="Quote16">Et du ciel une voix disait&#160;: «&#160;Celui-ci est mon Fils bien-aimé, en qui j’ai mis mes complaisances.&#160;»</string>
+    <string id="Ref16">Mt 3, 17</string>
+    <string id="Quote17">Sa mère dit aux serviteurs&#8239;: «&#160;Faites tout ce qu’il vous dira.&#160;»</string>
+    <string id="Ref17">Jn 2, 5</string>
+    <string id="Quote18">«&#160;Le temps est accompli, et le royaume de Dieu est proche&#160;; repentez-vous et croyez à l’Évangile.&#160;»</string>
+    <string id="Ref18">Mc 1, 15</string>
+    <string id="Quote19">Et une nuée les couvrit de son ombre, et de la nuée sortit une voix&#160;: «&#160;Celui-ci est mon Fils bien-aimé&#160;; écoutez-le.&#160;»</string>
+    <string id="Ref19">Mc 9, 6</string>
+    <string id="Quote20">«&#8239;Ceci est mon corps, qui est donné pour vous&#8239;: faites ceci en mémoire de moi.&#8239;»</string>
+    <string id="Ref20">Lc 22, 19</string>
+</strings>

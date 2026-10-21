@@ -1,0 +1,73 @@
+<strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <!-- French. Every string id of the base strings (resources/strings) is defined here too. -->
+    <string id="AppName">Rosario</string>
+
+    <!--
+        A template's $1$, $2$ are filled in by the app (Lang.format); a translation may reorder them. Every
+        text must fit the screen: LayoutTests.mc measures each one in its place.
+    -->
+
+    <!--
+        The glance: the day's mysteries over today's progress ("Joyeux" over "Mystère 2/5"). Only these
+        strings are marked scope="glance", so the glance's 32KB holds no other text. PrayerSalve is the
+        prayer the main screen names too.
+    -->
+    <string id="SetPluralJoyful" scope="glance">Joyeux</string>
+    <string id="SetPluralSorrowful" scope="glance">Douloureux</string>
+    <string id="SetPluralGlorious" scope="glance">Glorieux</string>
+    <string id="SetPluralLuminous" scope="glance">Lumineux</string>
+    <string id="GlanceNotStarted" scope="glance">Non commencé</string>
+    <!-- From the Je crois en Dieu to the first Gloire au Père. -->
+    <string id="GlanceInProgress" scope="glance">En cours</string>
+    <!-- $1$ the current mystery (1..5), $2$ how many there are (5). -->
+    <string id="GlanceMystery" scope="glance">Mystère $1$/$2$</string>
+    <string id="GlanceDone" scope="glance">Terminé</string>
+    <string id="PrayerSalve" scope="glance">Salve Regina</string>
+
+    <!--
+        The prayers, as the main screen names the current bead in large type (a smaller font when a name
+        is too wide for it).
+    -->
+    <string id="PrayerCreed">Je crois en Dieu</string>
+    <string id="PrayerOurFather">Notre Père</string>
+    <string id="PrayerHailMary">Je vous salue Marie</string>
+    <string id="PrayerGloryBe">Gloire au Père</string>
+    <!-- The Fatima Prayer. -->
+    <string id="PrayerFatima">Ô mon Jésus</string>
+    <!--
+        A Je vous salue Marie on the main screen: $1$ PrayerHailMary, $2$ its number in the decade, left out
+        here. "Je vous salue Marie 7" fits no font on the prayer's line (158px in the smallest font, where the
+        line holds 152), and the number already shows in the subscreen, in the middle of the decade's ring.
+    -->
+    <string id="PrayerNumber">$1$</string>
+
+    <!-- Title of the main screen at the opening and at the Salve. -->
+    <string id="OpeningTitle">Début</string>
+    <string id="ClosingTitle">Fin</string>
+    <!-- Line under the title at the opening and at the Salve: the day's mysteries. -->
+    <string id="SetTitleJoyful">Mystères joyeux</string>
+    <string id="SetTitleSorrowful">Mystères douloureux</string>
+    <string id="SetTitleGlorious">Mystères glorieux</string>
+    <string id="SetTitleLuminous">Mystères lumineux</string>
+
+    <!--
+        Title of each mystery on the main screen, the menu and the reading view: $1$ the ordinal, $2$ the set
+        name in singular (1er mystère joyeux).
+    -->
+    <string id="MysteryTitle">$1$ mystère $2$</string>
+    <string id="Ordinal1">1er</string>
+    <string id="Ordinal2">2e</string>
+    <string id="Ordinal3">3e</string>
+    <string id="Ordinal4">4e</string>
+    <string id="Ordinal5">5e</string>
+    <string id="SetSingularJoyful">joyeux</string>
+    <string id="SetSingularSorrowful">douloureux</string>
+    <string id="SetSingularGlorious">glorieux</string>
+    <string id="SetSingularLuminous">lumineux</string>
+
+    <!-- A no-break space before "?", as French sets it; every system font draws it as a space. -->
+    <string id="ResetPrompt">Recommencer le chapelet&#160;?</string>
+    <!-- Menu on hold UP, drawn by the app in the large font: short enough to fit on one line. -->
+    <string id="MenuRead">Lire le mystère</string>
+    <string id="MenuReset">Recommencer</string>
+</strings>

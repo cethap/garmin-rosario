@@ -8,8 +8,11 @@ external-mir/
 *.prg.debug.xml
 *.iq
 
-# Developer key
+# Signing keys, under any name: the store release key must never reach the repository (docs/RELEASE.md).
+# monkeyc -e writes only the .iq at its -o path; its intermediates go to a temporary folder.
 developer_key*
+*.der
+*.pem
 
 # System Files
 .DS_Store

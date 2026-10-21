@@ -1,0 +1,35 @@
+<strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <!--
+        The name of each mystery, under its title on the main screen and first in the reading view.
+        MysteryN follows Rosary.mysteryIndex + 1, like QuoteN and RefN in quotes.xml: joyeux 1..5,
+        douloureux 6..10, glorieux 11..15, lumineux 16..20. Each name fits 2 lines on the main screen.
+    -->
+
+    <!-- Joyeux -->
+    <string id="Mystery1">L’Annonciation</string>
+    <string id="Mystery2">La Visitation</string>
+    <string id="Mystery3">La Nativité</string>
+    <string id="Mystery4">La Présentation au Temple</string>
+    <string id="Mystery5">Le Recouvrement de Jésus au Temple</string>
+
+    <!-- Douloureux -->
+    <string id="Mystery6">L’Agonie au jardin</string>
+    <string id="Mystery7">La Flagellation</string>
+    <string id="Mystery8">Le Couronnement d’épines</string>
+    <string id="Mystery9">Le Portement de la Croix</string>
+    <string id="Mystery10">La Crucifixion et la mort de Jésus</string>
+
+    <!-- Glorieux -->
+    <string id="Mystery11">La Résurrection</string>
+    <string id="Mystery12">L’Ascension</string>
+    <string id="Mystery13">La Pentecôte</string>
+    <string id="Mystery14">L’Assomption</string>
+    <string id="Mystery15">Le Couronnement de Marie</string>
+
+    <!-- Lumineux -->
+    <string id="Mystery16">Le Baptême de Jésus au Jourdain</string>
+    <string id="Mystery17">Les Noces de Cana</string>
+    <string id="Mystery18">L’Annonce du Royaume de Dieu</string>
+    <string id="Mystery19">La Transfiguration</string>
+    <string id="Mystery20">L’Institution de l’Eucharistie</string>
+</strings>

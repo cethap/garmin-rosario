@@ -1,0 +1,63 @@
+<strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <string id="AppName">Rosario</string>
+
+    <!--
+        A template's $1$, $2$ are filled in by the app (Lang.format); a translation may reorder them. Every
+        text must fit the screen: LayoutTests.mc measures each one in its place.
+    -->
+
+    <!--
+        The glance: the day's mysteries over today's progress ("Gozosos" over "Misterio 2/5"). Only these
+        strings are marked scope="glance", so the glance's 32KB holds no other text. PrayerSalve is the prayer
+        the main screen names too.
+    -->
+    <string id="SetPluralJoyful" scope="glance">Gozosos</string>
+    <string id="SetPluralSorrowful" scope="glance">Dolorosos</string>
+    <string id="SetPluralGlorious" scope="glance">Gloriosos</string>
+    <string id="SetPluralLuminous" scope="glance">Luminosos</string>
+    <string id="GlanceNotStarted" scope="glance">Sin empezar</string>
+    <!-- From the Credo to the first Gloria. -->
+    <string id="GlanceInProgress" scope="glance">En progreso</string>
+    <!-- $1$ the current mystery (1..5), $2$ how many there are (5). -->
+    <string id="GlanceMystery" scope="glance">Misterio $1$/$2$</string>
+    <string id="GlanceDone" scope="glance">Completado</string>
+    <string id="PrayerSalve" scope="glance">Salve</string>
+
+    <!-- The prayers, as the main screen names the current bead in large type. -->
+    <string id="PrayerCreed">Credo</string>
+    <string id="PrayerOurFather">Padre Nuestro</string>
+    <string id="PrayerHailMary">Avemaría</string>
+    <string id="PrayerGloryBe">Gloria</string>
+    <string id="PrayerFatima">Oh Jesús mío</string>
+    <!-- An Avemaría and its number in the decade: $1$ PrayerHailMary, $2$ the number (Avemaría 7). -->
+    <string id="PrayerNumber">$1$ $2$</string>
+
+    <!-- Title of the main screen at the opening and at the Salve. -->
+    <string id="OpeningTitle">Inicio</string>
+    <string id="ClosingTitle">Final</string>
+    <!-- Line under the title at the opening and at the Salve: the day's mysteries. -->
+    <string id="SetTitleJoyful">Misterios Gozosos</string>
+    <string id="SetTitleSorrowful">Misterios Dolorosos</string>
+    <string id="SetTitleGlorious">Misterios Gloriosos</string>
+    <string id="SetTitleLuminous">Misterios Luminosos</string>
+
+    <!--
+        Title of each mystery on the main screen, the menu and the reading view: $1$ the ordinal, $2$ the set
+        name in singular (1er Misterio Gozoso).
+    -->
+    <string id="MysteryTitle">$1$ Misterio $2$</string>
+    <string id="Ordinal1">1er</string>
+    <string id="Ordinal2">2do</string>
+    <string id="Ordinal3">3er</string>
+    <string id="Ordinal4">4to</string>
+    <string id="Ordinal5">5to</string>
+    <string id="SetSingularJoyful">Gozoso</string>
+    <string id="SetSingularSorrowful">Doloroso</string>
+    <string id="SetSingularGlorious">Glorioso</string>
+    <string id="SetSingularLuminous">Luminoso</string>
+
+    <string id="ResetPrompt">¿Reiniciar el rosario?</string>
+    <!-- Menu on hold UP, drawn by the app in the large font: short enough to fit on one line. -->
+    <string id="MenuRead">Leer misterio</string>
+    <string id="MenuReset">Reiniciar</string>
+</strings>

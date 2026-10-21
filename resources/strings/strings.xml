@@ -1,0 +1,71 @@
+<strings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://developer.garmin.com/downloads/connect-iq/resources.xsd">
+    <!--
+        English, the base language: a device in any language without its own folder (resources-spa,
+        resources-fre) reads these. Every language defines every string id here.
+    -->
+    <string id="AppName">Rosario</string>
+
+    <!--
+        A template's $1$, $2$ are filled in by the app (Lang.format); a translation may reorder them. Every
+        text must fit the screen: LayoutTests.mc measures each one in its place.
+    -->
+
+    <!--
+        The glance: the day's mysteries over today's progress ("Joyful" over "Mystery 2/5"). Only these
+        strings are marked scope="glance", in every language, so the glance's 32KB holds no other text
+        (scripts/check-glance-strings.py checks it). PrayerSalve is the prayer the main screen names too.
+    -->
+    <string id="SetPluralJoyful" scope="glance">Joyful</string>
+    <string id="SetPluralSorrowful" scope="glance">Sorrowful</string>
+    <string id="SetPluralGlorious" scope="glance">Glorious</string>
+    <string id="SetPluralLuminous" scope="glance">Luminous</string>
+    <string id="GlanceNotStarted" scope="glance">Not started</string>
+    <!-- From the Creed to the first Glory Be. -->
+    <string id="GlanceInProgress" scope="glance">In progress</string>
+    <!-- $1$ the current mystery (1..5), $2$ how many there are (5). -->
+    <string id="GlanceMystery" scope="glance">Mystery $1$/$2$</string>
+    <string id="GlanceDone" scope="glance">Completed</string>
+    <string id="PrayerSalve" scope="glance">Hail Holy Queen</string>
+
+    <!--
+        The prayers, as the main screen names the current bead in large type (a smaller font when a name
+        is too wide for it).
+    -->
+    <string id="PrayerCreed">Apostles' Creed</string>
+    <string id="PrayerOurFather">Our Father</string>
+    <string id="PrayerHailMary">Hail Mary</string>
+    <string id="PrayerGloryBe">Glory Be</string>
+    <!-- The Fatima Prayer. -->
+    <string id="PrayerFatima">O My Jesus</string>
+    <!-- A Hail Mary and its number in the decade: $1$ PrayerHailMary, $2$ the number (Hail Mary 7). -->
+    <string id="PrayerNumber">$1$ $2$</string>
+
+    <!-- Title of the main screen at the opening and at the Salve. -->
+    <string id="OpeningTitle">Opening Prayers</string>
+    <string id="ClosingTitle">Closing Prayer</string>
+    <!-- Line under the title at the opening and at the Salve: the day's mysteries. -->
+    <string id="SetTitleJoyful">Joyful Mysteries</string>
+    <string id="SetTitleSorrowful">Sorrowful Mysteries</string>
+    <string id="SetTitleGlorious">Glorious Mysteries</string>
+    <string id="SetTitleLuminous">Luminous Mysteries</string>
+
+    <!--
+        Title of each mystery on the main screen, the menu and the reading view: $1$ the ordinal, $2$ the set
+        name in singular (1st Joyful Mystery).
+    -->
+    <string id="MysteryTitle">$1$ $2$ Mystery</string>
+    <string id="Ordinal1">1st</string>
+    <string id="Ordinal2">2nd</string>
+    <string id="Ordinal3">3rd</string>
+    <string id="Ordinal4">4th</string>
+    <string id="Ordinal5">5th</string>
+    <string id="SetSingularJoyful">Joyful</string>
+    <string id="SetSingularSorrowful">Sorrowful</string>
+    <string id="SetSingularGlorious">Glorious</string>
+    <string id="SetSingularLuminous">Luminous</string>
+
+    <string id="ResetPrompt">Restart the rosary?</string>
+    <!-- Menu on hold UP, drawn by the app in the large font: short enough to fit on one line. -->
+    <string id="MenuRead">Read mystery</string>
+    <string id="MenuReset">Restart</string>
+</strings>

@@ -1,0 +1,5 @@
+# English unit-test suite, built by scripts/test-all.sh (monkeyc -f test-eng.jungle -t).
+# English is the base language, so the base strings are its own. The English pins (:eng) stay in, and the
+# other languages' pins, which share their test names, are left out.
+project.manifest = manifest.xml
+base.excludeAnnotations = $(base.excludeAnnotations);spa;fre
