@@ -19,12 +19,13 @@ import Toybox.System;
 module I18n {
 
     // The language option: Automatic follows the watch; the others read in one language whatever the
-    // watch's.
+    // watch's. Latin is only ever chosen here: no watch is set to Latin, so Automatic never reads it.
     enum Choice {
         AUTOMATIC,
         ENGLISH,
         SPANISH,
-        FRENCH
+        FRENCH,
+        LATIN
     }
 
     // Application.Storage key of the saved choice. The glance reads it too.
@@ -52,7 +53,8 @@ module I18n {
     }
 
     // The language a choice reads in on a watch set to systemLanguage. Automatic reads Spanish on a watch
-    // in Spanish, French on one in French, and English on any other, as the app did before the option.
+    // in Spanish, French on one in French, and English on any other, as the app did before the option; it
+    // never reads Latin, which no watch language is.
     function resolve(choice as Choice, systemLanguage as System.Language) as Language {
         if (choice == ENGLISH) {
             return ENG;
@@ -62,6 +64,9 @@ module I18n {
         }
         if (choice == FRENCH) {
             return FRE;
+        }
+        if (choice == LATIN) {
+            return LAT;
         }
         if (systemLanguage == System.LANGUAGE_SPA) {
             return SPA;
@@ -79,7 +84,7 @@ module I18n {
 
     // A stored value as a choice: Automatic when it is missing or is not a choice.
     function decodeChoice(stored) as Choice {
-        if (stored instanceof Number && stored >= AUTOMATIC && stored <= FRENCH) {
+        if (stored instanceof Number && stored >= AUTOMATIC && stored <= LATIN) {
             return stored as Choice;
         }
         return AUTOMATIC;

@@ -405,7 +405,7 @@ function readingFontHasEveryGlyph(logger as Logger) as Boolean {
 // labels (in MainLayout.prayerFont), the labels of the menu and the language picker (large), the picker's
 // title (tiny) and the reset prompt, which the system's confirmation draws in a font of its own, so in every
 // font. French needs é è ê à ç ô Ô É ’ and the no-break space, which every font has; the picker needs ñ and
-// ç in the large font ("Español", "Français").
+// ç in the large font ("Español", "Français"). Latin needs only "…" beyond ASCII, as English does.
 (:test)
 function screenFontsHaveEveryGlyph(logger as Logger) as Boolean {
     var dc = ScreenArea.measuringDc();
@@ -598,7 +598,7 @@ function menuStaysInsideTheVisibleArea(logger as Logger) as Boolean {
 }
 
 // The language picker, in the menu's style: its title ("Language") beside the lens where the menu shows the
-// mystery's, over Automatic and the three languages, two at a time. In every language, with the saved
+// mystery's, over Automatic and the four languages, two at a time, the window scrolling over the five. In every language, with the saved
 // choice's mark on each item in turn and at every selection, everything it draws keeps the 2px margin inside
 // the visible area as the menu's does (MenuCheck.listFits), the mark lies inside its bar and clear of the
 // label, and the title, wrapped whole, ends above the first bar. Uses the real Storage and puts back the
@@ -612,7 +612,7 @@ function languagePickerStaysInsideTheVisibleArea(logger as Logger) as Boolean {
     var ok = true;
     try {
         for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
-            for (var choice = I18n.AUTOMATIC; choice <= I18n.FRENCH; choice++) {
+            for (var choice = I18n.AUTOMATIC; choice <= I18n.LATIN; choice++) {
                 Application.Storage.setValue(I18n.CHOICE_KEY, choice);
                 TestLanguage.use(logger, language);
                 var picker = new LanguageView();
@@ -653,7 +653,7 @@ function menuAndPickerStaySmall(logger as Logger) as Boolean {
         held.add(picker);
         ok = ok && menu > 0 && picker > 0 && menu < ReadingCheck.MEMORY_BUDGET && picker < ReadingCheck.MEMORY_BUDGET;
     }
-    logger.debug("warm-up menu " + warmUp + " bytes; menu, picker held eng, spa, fre " + held + " (budget "
+    logger.debug("warm-up menu " + warmUp + " bytes; menu, picker held eng, spa, fre, lat " + held + " (budget "
         + ReadingCheck.MEMORY_BUDGET + ")");
     return ok;
 }

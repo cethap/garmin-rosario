@@ -12,7 +12,7 @@ module TestLanguage {
 
     // The languages' codes, in I18n.Language order, for the logs.
     function code(language as Number) as String {
-        return ["eng", "spa", "fre"][language];
+        return ["eng", "spa", "fre", "lat"][language];
     }
 
     // Makes every lookup read in the language, and names it in the test's log.
@@ -54,21 +54,24 @@ function suiteCoversEveryLanguage(logger as Logger) as Boolean {
     for (var language = 0; language < I18n.LANGUAGE_COUNT; language++) {
         codes += (language > 0 ? "," : "") + TestLanguage.code(language);
     }
-    return I18n.LANGUAGE_COUNT == 3 && codes.equals("eng,spa,fre") && I18n.ENG == 0 && I18n.SPA == 1 && I18n.FRE == 2;
+    return I18n.LANGUAGE_COUNT == 4 && codes.equals("eng,spa,fre,lat") && I18n.ENG == 0 && I18n.SPA == 1 && I18n.FRE == 2
+        && I18n.LAT == 3;
 }
 
 // Automatic follows the watch: Spanish on a watch in Spanish, French on one in French, English on any other
-// (German and Portuguese among them). Any other choice reads in its own language whatever the watch's.
+// (German and Portuguese among them). Any other choice reads in its own language whatever the watch's, Latin
+// included.
 (:test)
 function resolveFollowsTheChoiceThenTheWatch(logger as Logger) as Boolean {
     var watches = [System.LANGUAGE_ENG, System.LANGUAGE_SPA, System.LANGUAGE_FRE, System.LANGUAGE_DEU,
         System.LANGUAGE_POR] as Array<System.Language>;
-    var choices = [I18n.AUTOMATIC, I18n.ENGLISH, I18n.SPANISH, I18n.FRENCH] as Array<I18n.Choice>;
+    var choices = [I18n.AUTOMATIC, I18n.ENGLISH, I18n.SPANISH, I18n.FRENCH, I18n.LATIN] as Array<I18n.Choice>;
     var expected = [
         [I18n.ENG, I18n.SPA, I18n.FRE, I18n.ENG, I18n.ENG],
         [I18n.ENG, I18n.ENG, I18n.ENG, I18n.ENG, I18n.ENG],
         [I18n.SPA, I18n.SPA, I18n.SPA, I18n.SPA, I18n.SPA],
-        [I18n.FRE, I18n.FRE, I18n.FRE, I18n.FRE, I18n.FRE]
+        [I18n.FRE, I18n.FRE, I18n.FRE, I18n.FRE, I18n.FRE],
+        [I18n.LAT, I18n.LAT, I18n.LAT, I18n.LAT, I18n.LAT]
     ];
     var ok = true;
     for (var c = 0; c < choices.size(); c++) {
@@ -79,6 +82,31 @@ function resolveFollowsTheChoiceThenTheWatch(logger as Logger) as Boolean {
         logger.debug("choice " + choices[c] + " on watches eng,spa,fre,deu,por: " + actual);
         ok = ok && actual.toString().equals(expected[c].toString());
     }
+    return ok;
+}
+
+// Automatic never reads Latin: no watch language is Latin, so on a watch set to any of the languages the
+// watch offers (System.Language), Automatic reads Spanish, French or else English. Only the Latin choice
+// reads Latin.
+(:test)
+function automaticNeverReadsLatin(logger as Logger) as Boolean {
+    var watches = [System.LANGUAGE_ARA, System.LANGUAGE_BUL, System.LANGUAGE_CES, System.LANGUAGE_CHS, System.LANGUAGE_CHT,
+        System.LANGUAGE_DAN, System.LANGUAGE_DEU, System.LANGUAGE_DUT, System.LANGUAGE_ENG, System.LANGUAGE_EST,
+        System.LANGUAGE_FIN, System.LANGUAGE_FRE, System.LANGUAGE_GRE, System.LANGUAGE_HEB, System.LANGUAGE_HRV,
+        System.LANGUAGE_HUN, System.LANGUAGE_IND, System.LANGUAGE_ITA, System.LANGUAGE_JPN, System.LANGUAGE_KOR,
+        System.LANGUAGE_LAV, System.LANGUAGE_LIT, System.LANGUAGE_NOB, System.LANGUAGE_POL, System.LANGUAGE_POR,
+        System.LANGUAGE_RON, System.LANGUAGE_RUS, System.LANGUAGE_SLO, System.LANGUAGE_SLV, System.LANGUAGE_SPA,
+        System.LANGUAGE_SWE, System.LANGUAGE_THA, System.LANGUAGE_TUR, System.LANGUAGE_UKR, System.LANGUAGE_VIE,
+        System.LANGUAGE_ZSM] as Array<System.Language>;
+    var ok = watches.size() == 36;
+    var read = "";
+    for (var w = 0; w < watches.size(); w++) {
+        var automatic = I18n.resolve(I18n.AUTOMATIC, watches[w]);
+        var expected = watches[w] == System.LANGUAGE_SPA ? I18n.SPA : (watches[w] == System.LANGUAGE_FRE ? I18n.FRE : I18n.ENG);
+        read += automatic;
+        ok = ok && automatic == expected && automatic != I18n.LAT && I18n.resolve(I18n.LATIN, watches[w]) == I18n.LAT;
+    }
+    logger.debug("Automatic on " + watches.size() + " watch languages read " + read);
     return ok;
 }
 
@@ -94,7 +122,7 @@ function savedChoiceRoundTripsAndInvalidReadsAsAutomatic(logger as Logger) as Bo
         var missing = I18n.loadChoice();
         var trips = "";
         var tripsOk = true;
-        var choices = [I18n.ENGLISH, I18n.FRENCH, I18n.SPANISH, I18n.AUTOMATIC] as Array<I18n.Choice>;
+        var choices = [I18n.ENGLISH, I18n.LATIN, I18n.FRENCH, I18n.SPANISH, I18n.AUTOMATIC] as Array<I18n.Choice>;
         for (var i = 0; i < choices.size(); i++) {
             I18n.saveChoice(choices[i]);
             var read = I18n.loadChoice();
@@ -102,7 +130,7 @@ function savedChoiceRoundTripsAndInvalidReadsAsAutomatic(logger as Logger) as Bo
             trips += " " + choices[i] + "->" + read + "/" + language;
             tripsOk = tripsOk && read == choices[i] && language == I18n.resolve(choices[i], watch);
         }
-        var stored = [-1, 4, "1", 1.0, [2], true] as Array<Application.PropertyValueType>;
+        var stored = [-1, 5, "1", 1.0, [2], true] as Array<Application.PropertyValueType>;
         var invalid = "";
         var invalidOk = I18n.decodeChoice(null) == I18n.AUTOMATIC;
         for (var i = 0; i < stored.size(); i++) {
@@ -142,7 +170,7 @@ function everyTableIsWholeAndSmall(logger as Logger) as Boolean {
             sizes.add(loaded[1] as Number);
             ok = ok && (loaded[2] as Boolean) && loaded[1] == sizes[0] && loaded[0] > 0 && (loaded[0] as Number) <= budget;
         }
-        logger.debug("table " + table + ": " + sizes[0] + " texts; bytes held eng,spa,fre " + held + " (budget " + budget + ")");
+        logger.debug("table " + table + ": " + sizes[0] + " texts; bytes held eng,spa,fre,lat " + held + " (budget " + budget + ")");
     }
     return ok;
 }

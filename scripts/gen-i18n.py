@@ -32,7 +32,8 @@ SOURCES = ROOT / "i18n"
 RESOURCES = ROOT / "resources" / "i18n"
 KEYS_FILE = ROOT / "source" / "I18nKeys.mc"
 # The languages, in the order of I18n.Language. English comes first: it is the model and the fallback.
-LANGUAGES = ["eng", "spa", "fre"]
+# Latin has no watch language (System.Language): only the in-app choice reads in it (I18n.resolve).
+LANGUAGES = ["eng", "spa", "fre", "lat"]
 GLANCE_TABLE = "glance"
 # Texts a table may hold: a key's index in its table is key % TABLE_KEYS.
 TABLE_KEYS = 256

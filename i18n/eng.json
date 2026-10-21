@@ -50,7 +50,7 @@
         "MenuRead": "Read mystery",
         "MenuLanguage": "Language",
         "MenuReset": "Restart",
-        "// LanguageAutomatic": "The language picker's first item, which follows the watch's language. The picker names each language in that language, the same whatever the language: English, Español, Français (LanguageLayout in source/LanguageView.mc).",
+        "// LanguageAutomatic": "The language picker's first item, which follows the watch's language. The picker names each language in that language, the same whatever the language: English, Español, Français, Latina (LanguageLayout in source/LanguageView.mc).",
         "LanguageAutomatic": "Automatic"
     },
     "mysteries": {

@@ -7,9 +7,9 @@ import Toybox.WatchUi;
 module LanguageLayout {
 
     // The items, in I18n.Choice order: Automatic in the current language, then each language named in its
-    // own, the same whatever the language.
+    // own, the same whatever the language. Latin, which no watch language is, can be chosen only here.
     function labels() as Array<String> {
-        return [I18n.text(I18n.LanguageAutomatic), "English", "Español", "Français"] as Array<String>;
+        return [I18n.text(I18n.LanguageAutomatic), "English", "Español", "Français", "Latina"] as Array<String>;
     }
 
     // The title, "Language" as the menu names the picker, wrapped like the menu's title and centered on the
@@ -22,7 +22,7 @@ module LanguageLayout {
 }
 
 // The language picker, opened from "Language" in the hold-UP menu: Automatic, which follows the watch, and
-// the three languages, the saved choice marked with a dot and selected first (LanguageDelegate: UP/DOWN move
+// the four languages, the saved choice marked with a dot and selected first (LanguageDelegate: UP/DOWN move
 // the selection, START chooses, BACK returns to the rosary).
 class LanguageView extends BarListView {
 

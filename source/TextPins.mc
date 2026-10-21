@@ -2,10 +2,10 @@ import Toybox.Lang;
 import Toybox.Test;
 
 // The checks behind the tests that pin texts. A test about a text itself (a label, a title, a name) pins
-// it word for word, so each language has its own pins: PinsEng.mc, PinsSpa.mc and PinsFre.mc define the
-// same tests, each named with its language's suffix, and call these checks with that language and its
-// words. Each check reads in the language it is given (TestLanguage.use), so the one test build runs every
-// language's pins.
+// it word for word, so each language has its own pins: PinsEng.mc, PinsSpa.mc, PinsFre.mc and PinsLat.mc
+// define the same tests, each named with its language's suffix, and call these checks with that language
+// and its words. Each check reads in the language it is given (TestLanguage.use), so the one test build
+// runs every language's pins.
 (:test)
 module TextPins {
 

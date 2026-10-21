@@ -13,12 +13,19 @@ module PickerCheck {
 
     // The prayer on the rosary's main screen at step 13, the 7th Avemaría of the 1st decade, in each language.
     function prayers() as Array<String> {
-        return ["Hail Mary 7", "Avemaría 7", "Je vous salue Marie"] as Array<String>;
+        return ["Hail Mary 7", "Avemaría 7", "Je vous salue Marie", "Ave Maria 7"] as Array<String>;
     }
 
     // The main screen's title there, for the Sorrowful mysteries.
     function titles() as Array<String> {
-        return ["1st Sorrowful Mystery", "1er Misterio Doloroso", "1er mystère douloureux"] as Array<String>;
+        return ["1st Sorrowful Mystery", "1er Misterio Doloroso", "1er mystère douloureux", "Primum mysterium dolorosum"]
+            as Array<String>;
+    }
+
+    // The picker's items: Automatic in the current language, then each language named in its own.
+    function labels(language as Number) as Array<String> {
+        var autos = ["Automatic", "Automático", "Automatique", "Automatica"];
+        return [autos[language], "English", "Español", "Français", "Latina"] as Array<String>;
     }
 
     // Opens the picker over a rosary on step 13 of the Sorrowful mysteries, with the choice saved first:
@@ -44,17 +51,16 @@ module PickerCheck {
 }
 
 // The picker opens on the saved choice, which it marks, and lists Automatic in the current language, then
-// each language in its own: "English", "Español", "Français". DOWN and UP move the selection and stop at
-// either end (no wrap-around), the two-item window following it; hold UP does nothing; none of them saves
-// or closes anything. BACK closes the picker and changes nothing: the saved choice and the rosary's texts
-// stay as they were.
+// each language in its own: "English", "Español", "Français", "Latina". DOWN and UP move the selection and
+// stop at either end (no wrap-around), the two-item window following it; hold UP does nothing; none of them
+// saves or closes anything. BACK closes the picker and changes nothing: the saved choice and the rosary's
+// texts stay as they were.
 (:test)
 function languagePickerStopsAtBothEndsAndBackCancels(logger as Logger) as Boolean {
     var before = Application.Storage.getValue(I18n.CHOICE_KEY);
-    var autos = ["Automatic", "Automático", "Automatique"];
     var ok = true;
     try {
-        var choices = [I18n.AUTOMATIC, I18n.ENGLISH, I18n.SPANISH, I18n.FRENCH] as Array<I18n.Choice>;
+        var choices = [I18n.AUTOMATIC, I18n.ENGLISH, I18n.SPANISH, I18n.FRENCH, I18n.LATIN] as Array<I18n.Choice>;
         for (var c = 0; c < choices.size(); c++) {
             var opened = PickerCheck.open(choices[c]);
             var rosaryView = opened[0] as RosaryView;
@@ -70,16 +76,16 @@ function languagePickerStopsAtBothEndsAndBackCancels(logger as Logger) as Boolea
             var start = picker.selected;
             var trail = [];
             var handled = true;
-            for (var i = 0; i < 4; i++) {
+            for (var i = 0; i < 5; i++) {
                 handled = delegate.onPreviousPage() && handled;
             }
             trail.add(picker.selected + "/" + picker.first);
-            for (var i = 0; i < 4; i++) {
+            for (var i = 0; i < 5; i++) {
                 handled = delegate.onNextPage() && handled;
                 trail.add(picker.selected + "/" + picker.first);
             }
             handled = delegate.onMenu() && handled;
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < 4; i++) {
                 handled = delegate.onPreviousPage() && handled;
                 trail.add(picker.selected + "/" + picker.first);
             }
@@ -89,12 +95,12 @@ function languagePickerStopsAtBothEndsAndBackCancels(logger as Logger) as Boolea
             logger.debug("saved " + choices[c] + ": labels=" + labels + " marked=" + marked + " opened on " + start
                 + " trail=" + trail + " handled=" + handled + " quiet=" + quiet + " back=" + back + " calls=" + rosary.calls
                 + " prayer '" + prayer + "' -> '" + rosaryView.prayer() + "'");
-            var expectedMarks = [false, false, false, false];
+            var expectedMarks = [false, false, false, false, false];
             expectedMarks[c] = true;
             ok = handled && quiet && back && start == choices[c] && picker.saved() == choices[c]
                 && marked.toString().equals(expectedMarks.toString())
-                && labels.toString().equals([autos[language], "English", "Español", "Français"].toString())
-                && trail.toString().equals(["0/0", "1/0", "2/1", "3/2", "3/2", "2/2", "1/1", "0/0"].toString())
+                && labels.toString().equals(PickerCheck.labels(language).toString())
+                && trail.toString().equals(["0/0", "1/0", "2/1", "3/2", "4/3", "4/3", "3/3", "2/2", "1/1", "0/0"].toString())
                 && rosary.calls.toString().equals(["close"].toString()) && I18n.loadChoice() == choices[c]
                 && rosaryView.prayer().equals(prayer) && ok;
         }
@@ -112,14 +118,14 @@ function languagePickerSavesTheSelectedChoice(logger as Logger) as Boolean {
     var watch = System.getDeviceSettings().systemLanguage;
     var ok = true;
     try {
-        var choices = [I18n.AUTOMATIC, I18n.ENGLISH, I18n.SPANISH, I18n.FRENCH] as Array<I18n.Choice>;
+        var choices = [I18n.AUTOMATIC, I18n.ENGLISH, I18n.SPANISH, I18n.FRENCH, I18n.LATIN] as Array<I18n.Choice>;
         for (var c = 0; c < choices.size(); c++) {
             var saved = choices[(c + 1) % choices.size()];
             var opened = PickerCheck.open(saved);
             var rosary = opened[1] as MenuFake.RecordingRosary;
             var picker = opened[2] as LanguageView;
             var delegate = opened[3] as LanguageDelegate;
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < 4; i++) {
                 delegate.onPreviousPage();
             }
             for (var i = 0; i < c; i++) {
@@ -147,9 +153,9 @@ function rosaryReadsInTheChosenLanguageAtOnce(logger as Logger) as Boolean {
     var before = Application.Storage.getValue(I18n.CHOICE_KEY);
     var ok = true;
     try {
-        // English first, then Spanish, French and back to English: each time from the language before.
-        var choices = [I18n.SPANISH, I18n.FRENCH, I18n.ENGLISH] as Array<I18n.Choice>;
-        var languages = [I18n.SPA, I18n.FRE, I18n.ENG];
+        // English first, then Spanish, French, Latin and back to English: each time from the language before.
+        var choices = [I18n.SPANISH, I18n.FRENCH, I18n.LATIN, I18n.ENGLISH] as Array<I18n.Choice>;
+        var languages = [I18n.SPA, I18n.FRE, I18n.LAT, I18n.ENG];
         var saved = I18n.ENGLISH;
         for (var c = 0; c < choices.size(); c++) {
             var opened = PickerCheck.open(saved);
@@ -157,7 +163,7 @@ function rosaryReadsInTheChosenLanguageAtOnce(logger as Logger) as Boolean {
             var delegate = opened[3] as LanguageDelegate;
             var prayer = rosaryView.prayer();
             var title = rosaryView.titleLines().toString();
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < 4; i++) {
                 delegate.onPreviousPage();
             }
             for (var i = 0; i < choices[c]; i++) {
