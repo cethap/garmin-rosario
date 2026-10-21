@@ -90,7 +90,7 @@ The left-out part number would show only English. Covering it would mean lowerin
 To check the package (it is a 7-Zip archive):
 
 ```sh
-bsdtar -tvf bin/Rosario.iq                 # manifest.xml, manifest.sig2, dev_key.pub, 006-B3888-00/Rosario.prg
+bsdtar -tvf bin/Rosario.iq                 # manifest.xml, manifest.sig2, dev_key.pub, 006-B3888-00/Rosario.prg, debug.xml
 bsdtar -xOf bin/Rosario.iq manifest.xml    # languages eng, fre, spa; no permissions
 ```
 
